@@ -1,0 +1,17 @@
+{
+  "projectName": ".",
+  "mode": "code-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "npm",
+  "git": true,
+  "version": 1,
+  "framework": "react-cra",
+  "chosenAddOns": [
+    "biome",
+    "shadcn",
+    "store",
+    "t3env",
+    "tanstack-query"
+  ]
+}

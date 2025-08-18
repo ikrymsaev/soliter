@@ -1,0 +1,9 @@
+import type { ITempSlot } from "../interfaces";
+import type { ISlotRules } from "./ISlotRules";
+
+export class TempSlotRules implements ISlotRules<ITempSlot> {
+    canAcceptCard(tempSlot: ITempSlot): boolean {
+        // Временный слот может принять карту только если он пустой
+        return tempSlot.isEmpty();
+    }
+}
