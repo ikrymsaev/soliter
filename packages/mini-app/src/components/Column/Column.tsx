@@ -1,4 +1,3 @@
-import React from 'react';
 import { useColumn, useColumnCards } from '@/core/react/hooks/useColumn';
 import { useEmitEvent } from '@/core/react/hooks/useEventEmitter';
 import { EGameEvent } from '@/core/lib/events';
@@ -45,7 +44,7 @@ export const ColumnCmp = ({ columnId }: Props) => {
             ))}
             
             {/* Отображаем пустой слот */}
-            {column.isEmpty() && (
+            {column.isEmpty() ? (
                 <DropZone
                     key={`empty-column-${columnId}`}
                     targetSlot={column}
@@ -54,7 +53,7 @@ export const ColumnCmp = ({ columnId }: Props) => {
                 >
                     <span className="text-gray-400 text-xs">+</span>
                 </DropZone>
-            )}
+            ) : null}
         </div>
     )
 }

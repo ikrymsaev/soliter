@@ -52,8 +52,9 @@ export const Card: React.FC<CardProps> = ({
   const colorClasses = suitInfo.color === 'red' ? 'text-red-600' : 'text-black';
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging && props.onClick && isAvailable) {
-      props.onClick(e);
+    if (!isDragging && isAvailable) {
+      emitEvent.emit(EGameEvent.CARD_CLICK, { card });
+      props.onClick?.(e);
     }
   };
 
@@ -62,7 +63,6 @@ export const Card: React.FC<CardProps> = ({
     if (sourceSlot && 'canMoveStack' in sourceSlot && typeof stackIndex === 'number') {
       const canMove = sourceSlot.canMoveStack(stackIndex);
       if (!canMove) {
-        console.log(`[Card] Cannot move stack from index ${stackIndex}, preventing drag`);
         e.preventDefault();
         return;
       }

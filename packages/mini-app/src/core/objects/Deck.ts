@@ -16,7 +16,7 @@ export class Deck implements IDeck {
     }
 
     public getCards(): ICard[] {
-        return [...this.cards];
+        return this.cards;
     }
 
     public addCard(card: ICard): void {
@@ -32,8 +32,7 @@ export class Deck implements IDeck {
         return false;
     }
 
-    public canAcceptCard(card: ICard): boolean {
-        console.log('[Deck] canAcceptCard', card);
+    public canAcceptCard(): boolean {
         // Колода может принять любую карту (простая логика)
         return true;
     }

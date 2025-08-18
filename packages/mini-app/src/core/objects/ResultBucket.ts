@@ -35,11 +35,8 @@ export class ResultBucket implements IResultBucket {
     }
 
     public canAcceptCard(card: ICard): boolean {
-        console.log('[ResultBucket] canAcceptCard', card.getDisplayName(), 'suit:', card.cardSuit);
-        
         // Проверяем, может ли слот принять карту по масти
         if (!this.slots[card.cardSuit].canAcceptCard(card)) {
-            console.log(`[ResultBucket] Slot cannot accept card due to suit mismatch`);
             return false;
         }
         
@@ -48,13 +45,11 @@ export class ResultBucket implements IResultBucket {
         // Если слот пустой, можно положить только туз
         if (!topCard) {
             const canAccept = card.cardType === ECardType.ACE;
-            console.log(`[ResultBucket] Empty slot, can accept ace: ${canAccept}`);
             return canAccept;
         }
         
         // Если слот не пустой, проверяем правила пасьянса
         const canAccept = this.isValidSequence(topCard, card);
-        console.log(`[ResultBucket] Top card: ${topCard.getDisplayName()}, can accept: ${canAccept}`);
         return canAccept;
     }
 

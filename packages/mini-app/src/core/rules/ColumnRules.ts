@@ -6,7 +6,7 @@ export class ColumnRules implements ISlotRules<IColumn> {
     canAcceptCard(column: IColumn, card?: ICard): boolean {
         if (!card) return false;
         const topCard = column.getTopCard();
-        
+       
         // Если колонка пустая, можно положить только короля
         if (!topCard) {
             // return card.cardType === 'K';
@@ -17,8 +17,9 @@ export class ColumnRules implements ISlotRules<IColumn> {
         const topCardInfo = topCard.getCardSuitInfo();
         const cardInfo = card.getCardSuitInfo();
         
-        return topCardInfo.color !== cardInfo.color && 
-               this.getCardValue(topCard) === this.getCardValue(card) + 1;
+        const differentColor = topCardInfo.color !== cardInfo.color;
+        const validSequence = this.getCardValue(topCard) === this.getCardValue(card) + 1;
+        return differentColor && validSequence;
     }
 
     private getCardValue(card: ICard): number {

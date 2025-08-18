@@ -1,8 +1,10 @@
-import { createContext } from "react";
+import { createContext, useMemo } from "react";
 import { EventEmitter } from "../../lib/EventEmitter";
 
 export const EventEmitterContext = createContext<EventEmitter>(new EventEmitter());
 
 export const EventEmitterProvider = ({ children }: { children: React.ReactNode }) => {
-    return <EventEmitterContext.Provider value={new EventEmitter()}>{children}</EventEmitterContext.Provider>;
+    const eventEmitter = useMemo(() => new EventEmitter(), []);
+    
+    return <EventEmitterContext.Provider value={eventEmitter}>{children}</EventEmitterContext.Provider>;
 }

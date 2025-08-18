@@ -1,8 +1,6 @@
 import type { Game } from "./Game";
 import type { EventEmitter } from "./lib/EventEmitter";
-import type { Card } from "./objects/Card";
 import { EGameEvent, EGameAction } from "./lib/events";
-import { TempBucket } from "./objects/TempBucket";
 import { observable, type IObservable } from "./lib/Observable";
 import { TempSlot } from "./objects/TempSlot";
 import { Column } from "./objects/Column";
@@ -16,7 +14,6 @@ export class Controller {
         private readonly eventEmitter: EventEmitter,
         private readonly game: Game,
     ) {
-        console.log('[Controller] constructor', this.game);
 
         this.eventEmitter.on(EGameEvent.CARD_CLICK, this.clickCard);
         this.eventEmitter.on(EGameEvent.CLICK_OUTSIDE, this.clickOutside);
@@ -28,6 +25,18 @@ export class Controller {
 
     private clickCard = (data: { card: ICard }) => {
         this.clicks.set((prev) => prev + 1);
+        const currentSelectedCard = this.selectedCard.get();
+        
+        if (currentSelectedCard && currentSelectedCard !== data.card) {
+            const targetSlot = this.findCardSlot(data.card);
+            if (targetSlot) {
+                const success = this.moveCard(currentSelectedCard, targetSlot);
+                if (success) {
+                    this.setSelectedCard(null);
+                    return;
+                }
+            }
+        }
         this.selectedCard.set(data.card);
     }
 
@@ -44,22 +53,20 @@ export class Controller {
     private clickColumn = (data: { slot: IColumn }) => {
         this.clicks.set((prev) => prev + 1);
         const selectedCard = this.selectedCard.get();
-        
         if (!selectedCard) {
             return;
         }
-        this.moveCard(selectedCard, data.slot);
+        const success = this.moveCard(selectedCard, data.slot);
         this.setSelectedCard(null);
     }
 
     private clickResultSlot = (data: { slot: IResultSlot }) => {
         this.clicks.set((prev) => prev + 1);
         const selectedCard = this.selectedCard.get();
-        
         if (!selectedCard) {
             return;
         }
-        this.moveCard(selectedCard, data.slot);
+        const success = this.moveCard(selectedCard, data.slot);
         this.setSelectedCard(null);
     }
 
@@ -131,22 +138,26 @@ export class Controller {
 
         // Проверяем колонки
         for (const column of columns) {
-            if (column.getCards().includes(card)) {
+            const columnCards = column.getCards();
+            if (columnCards.includes(card)) {
                 return column;
             }
         }
 
         // Проверяем временные слоты
         for (const slot of temp.slots) {
-            if (slot.card.get() === card) {
+            const slotCard = slot.card.get();
+            if (slotCard === card) {
                 return slot;
             }
         }
 
         // Проверяем результатные слоты
-        const slot = result.find(slot => slot.getCards().get().includes(card));
-        if (slot) {
-            return slot;
+        for (const slot of result) {
+            const slotCards = slot.getCards().get();
+            if (slotCards.includes(card)) {
+                return slot;
+            }
         }
 
         // Карты из колоды не могут быть перенесены (они должны быть сначала вытянуты)
@@ -156,7 +167,7 @@ export class Controller {
     }
 
     // Метод для прямого переноса карты (для использования из UI)
-    public moveCard = (card: Card, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck): boolean => {
+    public moveCard = (card: ICard, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck): boolean => {
         return this.tryMoveCard(card, targetSlot);
     }
 
@@ -170,8 +181,23 @@ export class Controller {
         }
 
         // Проверяем правила игры
-        if (!rules.canMoveCard(targetSlot, card)) {
+        const canMove = rules.canMoveCard(targetSlot, card);        
+        if (!canMove) {
             return false;
+        }
+
+        if (sourceSlot instanceof Column) {
+            const cards = sourceSlot.getCards();
+            const cardIndex = cards.indexOf(card);
+            
+            if (cardIndex !== -1) {
+                if (sourceSlot.canMoveStack(cardIndex)) {
+                    const stack = sourceSlot.getMovableStack(cardIndex);
+                    if (stack.length > 1) {
+                        return this.moveStack(sourceSlot, cardIndex, targetSlot);
+                    }
+                }
+            }
         }
 
         // Удаляем карту из исходного слота
@@ -190,12 +216,11 @@ export class Controller {
 
         // Добавляем карту в целевой слот
         if ('addCard' in targetSlot) {
-            targetSlot.addCard(card);
-        } else if (targetSlot instanceof TempBucket) {
-            // Для TempBucket используем специальный метод
+            (targetSlot as any).addCard(card);
+        } else if ('addCardToSlot' in targetSlot) {
             const emptySlot = targetSlot.slots.find(slot => slot.isEmpty());
             if (emptySlot) {
-                targetSlot.addCardToSlot(card, emptySlot);
+                (targetSlot as any).addCardToSlot(card, emptySlot);
             } else {
                 return false;
             }
@@ -274,7 +299,7 @@ export class Controller {
         const rules = this.game.getRules();
         
         // Проверяем правила игры
-        if (!rules.canDrawFromDeck(deck)) {
+        if (!rules.canDrawFromDeck(deck as any)) {
             return null;
         }
         
@@ -285,7 +310,7 @@ export class Controller {
             this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
                 action: EGameAction.DRAW_CARD, 
                 card, 
-                deck 
+                deck: deck as any
             });
         }
         
@@ -298,7 +323,7 @@ export class Controller {
         const rules = this.game.getRules();
         
         // Проверяем правила игры
-        if (!rules.canDrawFromDeck(deck)) {
+        if (!rules.canDrawFromDeck(deck as any)) {
             return false;
         }
         
@@ -317,12 +342,12 @@ export class Controller {
 
         // Добавляем карту в целевой слот
         if ('addCard' in targetSlot) {
-            targetSlot.addCard(card);
-        } else if (targetSlot instanceof TempBucket) {
+            (targetSlot as any).addCard(card);
+        } else if ('addCardToSlot' in targetSlot) {
             // Для TempBucket используем специальный метод
             const emptySlot = targetSlot.slots.find(slot => slot.isEmpty());
             if (emptySlot) {
-                targetSlot.addCardToSlot(card, emptySlot);
+                (targetSlot as any).addCardToSlot(card, emptySlot);
             } else {
                 // Возвращаем карту в колоду
                 deck.addCard(card);
@@ -338,7 +363,7 @@ export class Controller {
         this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
             action: EGameAction.MOVE_FROM_DECK,
             card, 
-            deck, 
+            deck: deck as any, 
             targetSlot 
         });
         
@@ -360,7 +385,7 @@ export class Controller {
      * Получает доступные ходы для карты
      */
     public getAvailableMoves = (card: ICard): Array<IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck> => {
-        return this.game.getAvailableMoves(card);
+        return this.game.getAvailableMoves(card as any);
     }
 
     /**

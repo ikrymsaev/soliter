@@ -50,8 +50,6 @@ export const DropZone: React.FC<DropZoneProps> = ({
             if (foundCard) {
                 sourceSlot = column;
                 stackIndex = cards.indexOf(foundCard);
-                console.log(`[DropZone] Found card ${cardData} in column ${column.id} at index ${stackIndex}`);
-                console.log(`[DropZone] Column cards:`, cards.map(c => c.getDisplayName()));
                 break;
             }
         }
@@ -86,25 +84,18 @@ export const DropZone: React.FC<DropZoneProps> = ({
             
             // Если перетаскиваем стопку карт из колонки в колонку
             if (sourceSlot instanceof Column && targetSlot instanceof Column && stackIndex !== undefined) {
-                console.log(`[DropZone] Attempting to move stack from index ${stackIndex}`);
                 // Проверяем, можно ли переместить стопку
                 if (sourceSlot.canMoveStack(stackIndex)) {
-                    console.log(`[DropZone] Stack can be moved, calling moveStack`);
                     success = controller.moveStack(sourceSlot, stackIndex, targetSlot);
                 } else {
-                    console.log(`[DropZone] Stack cannot be moved, cannot move single card from middle of stack`);
                     success = false;
                 }
             } else {
-                console.log(`[DropZone] Not a column-to-column move, moving single card`);
-                
-                // Для перемещения в temp/result слоты проверяем, что карта является верхней в своей стопке
                 if (sourceSlot instanceof Column && stackIndex !== undefined) {
                     const cards = sourceSlot.getCards();
                     const isTopCard = stackIndex === cards.length - 1;
                     
                     if (!isTopCard) {
-                        console.log(`[DropZone] Card is not at top of stack, cannot move to temp/result`);
                         success = false;
                     } else {
                         // Обычное перемещение одной карты
@@ -122,7 +113,6 @@ export const DropZone: React.FC<DropZoneProps> = ({
                 e.dataTransfer.dropEffect = 'none';
             }
         } else {
-            console.log('[DropZone] Card not found or source slot not found');
             e.dataTransfer.dropEffect = 'none';
         }
     };

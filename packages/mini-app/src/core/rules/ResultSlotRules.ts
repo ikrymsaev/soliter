@@ -9,13 +9,15 @@ export class ResultSlotRules implements ISlotRules<IResultSlot> {
         
         // Если слот пустой, можно положить только туза
         if (cards.length === 0) {
-            return card.cardType === 'A';
+            const canAccept = card.cardType === 'A';
+            return canAccept;
         }
         
         // Карты должны быть одной масти и идти по возрастанию
         const topCard = cards[cards.length - 1];
-        return topCard.cardSuit === card.cardSuit && 
-               this.getCardValue(topCard) === this.getCardValue(card) - 1;
+        const sameSuit = topCard.cardSuit === card.cardSuit;
+        const validSequence = this.getCardValue(topCard) === this.getCardValue(card) - 1;        
+        return sameSuit && validSequence;
     }
 
     private getCardValue(card: ICard): number {

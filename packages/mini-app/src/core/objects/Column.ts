@@ -36,7 +36,6 @@ export class Column implements IColumn {
     }
 
     public canAcceptCard(card: ICard): boolean {
-        console.log('[Column] canAcceptCard', card.getDisplayName(), 'for column', this.id);
         return this.rules.canAcceptCard(this, card);
     }
 
@@ -58,17 +57,14 @@ export class Column implements IColumn {
     public canMoveStack(fromIndex: number): boolean {
         const cards = this.cards.get();
         if (fromIndex < 0 || fromIndex >= cards.length) {
-            console.log(`[Column] canMoveStack: invalid index ${fromIndex}, cards length: ${cards.length}`);
             return false;
         }
 
         // Получаем стопку от выбранной карты до конца
         const stack = cards.slice(fromIndex);
-        console.log(`[Column] canMoveStack: checking from index ${fromIndex}, stack:`, stack.map(c => c.getDisplayName()));
 
         // Если стопка состоит из одной карты, то её можно перемещать
         if (stack.length === 1) {
-            console.log(`[Column] canMoveStack: single card, returning true`);
             return true;
         }
 
@@ -80,26 +76,17 @@ export class Column implements IColumn {
             const currentSuit = currentCard.getCardSuitInfo();
             const nextSuit = nextCard.getCardSuitInfo();
             
-            console.log(`[Column] checking ${currentCard.getDisplayName()} -> ${nextCard.getDisplayName()}`);
-            console.log(`[Column] colors: ${currentSuit.color} vs ${nextSuit.color}`);
-            console.log(`[Column] values: ${this.getCardValue(currentCard)} vs ${this.getCardValue(nextCard)}`);
-            
             // Карты должны быть разного цвета
             if (currentSuit.color === nextSuit.color) {
-                console.log(`[Column] canMoveStack: same color at position ${i}, returning false`);
-                console.log(`[Column] Current card: ${currentCard.getDisplayName()} (${currentSuit.color})`);
-                console.log(`[Column] Next card: ${nextCard.getDisplayName()} (${nextSuit.color})`);
                 return false;
             }
             
             // Карты должны идти по убыванию
             if (this.getCardValue(currentCard) !== this.getCardValue(nextCard) + 1) {
-                console.log(`[Column] canMoveStack: wrong order at position ${i}, returning false`);
                 return false;
             }
         }
 
-        console.log(`[Column] canMoveStack: entire stack is valid, returning true`);
         return true;
     }
 

@@ -2,11 +2,18 @@ import type { ECardSuit } from "@/core/interfaces";
 import { useResultSlot, useResultSlotCards } from "@/core/react/hooks/useResultCards";
 import { DropZone } from "../DropZone";
 import { Card } from "../Card";
+import { useEmitEvent } from "@/core/react/hooks/useEventEmitter";
+import { EGameEvent } from "@/core/lib/events";
 
 export const ResultSlot = ({ suit }: { suit: ECardSuit }) => {
     const slot = useResultSlot(suit);
     const cards = useResultSlotCards(suit);
     const lastCard = cards.at(-1);
+    const { emit } = useEmitEvent();
+
+    const handleSlotClick = () => {
+        emit(EGameEvent.RESULT_SLOT_CLICK, { slot: slot });
+    }
 
     return (
         <div className="flex flex-col gap-2">
@@ -30,6 +37,7 @@ export const ResultSlot = ({ suit }: { suit: ECardSuit }) => {
                     key={`empty-${suit}`}
                     targetSlot={slot}
                     className="w-16 h-24 border-2 border-dashed border-gray-300 rounded-sm flex items-center justify-center cursor-pointer hover:border-gray-400"
+                    onClick={handleSlotClick}
                 >
                     <span className="text-gray-400 text-xs">+</span>
                 </DropZone>
