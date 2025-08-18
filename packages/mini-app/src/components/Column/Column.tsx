@@ -1,8 +1,9 @@
-import { useColumn, useColumnCards } from "@/core/react/hooks/useColumn";
-import { DropZone } from "../DropZone";
-import { Card } from "../Card";
-import { useEmitEvent } from "@/core/react/hooks/useEventEmitter";
-import { EGameEvent } from "@/core/lib/events";
+import React from 'react';
+import { useColumn, useColumnCards } from '@/core/react/hooks/useColumn';
+import { useEmitEvent } from '@/core/react/hooks/useEventEmitter';
+import { EGameEvent } from '@/core/lib/events';
+import { DropZone } from '../DropZone';
+import { Card } from '../Card';
 
 interface Props {
     columnId: string;
@@ -22,18 +23,23 @@ export const ColumnCmp = ({ columnId }: Props) => {
     }
 
     return (
-        <div className="flex flex-col w-16 min-h-24">
+        <div className="flex flex-col w-16 min-h-24 relative">
             {/* Отображаем карты в колонке */}
             {cards.map((card, index) => (
                 <DropZone
                     key={`${card.cardType}-${card.cardSuit}-${index}`}
                     targetSlot={column}
                     className="relative"
-                    style={{ marginTop: index === 0 ? 0 : -70 }}
+                    style={{ 
+                        marginTop: index === 0 ? 0 : -70,
+                        zIndex: index + 1 // Первые карты имеют меньший z-index, последние - больший
+                    }}
                 >
                     <Card
                         card={card}
                         sourceSlot={column}
+                        stackIndex={index}
+                        isStackTop={index === cards.length - 1} // Верхняя карта в стопке
                     />
                 </DropZone>
             ))}

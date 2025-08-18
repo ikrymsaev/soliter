@@ -20,6 +20,7 @@ export enum EGameEvent {
 // Enum'ы для действий
 export enum EGameAction {
     MOVE = 'move',
+    MOVE_STACK = 'move_stack',
     RETURN_TO_DECK = 'return_to_deck',
     DRAW_CARD = 'draw_card',
     MOVE_FROM_DECK = 'move_from_deck',
@@ -58,6 +59,7 @@ export interface DeckClickEvent {
 export interface GameStateChangedEvent {
     action: EGameAction;
     card?: any; // Card type
+    cards?: any[]; // Card[] type for stack moves
     sourceSlot?: any; // Column | ResultSlot | TempSlot type
     targetSlot?: any; // Column | ResultSlot | TempSlot type
     deck?: any; // Deck type

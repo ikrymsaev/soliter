@@ -1,10 +1,10 @@
-import type { Deck as DeckModel } from "@/core/objects/Deck";
+import type { IDeck } from "@/core/interfaces";
 import { useEmitEvent } from "@/core/react/hooks/useEventEmitter";
 import { EGameEvent } from "@/core/lib/events";
 import { DropZone } from "./DropZone";
 
 interface Props {
-    deck: DeckModel;
+    deck: IDeck;
 }
 
 export const Deck = ({ deck }: Props) => {

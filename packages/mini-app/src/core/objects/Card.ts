@@ -2,10 +2,15 @@ import { ECardSuit, ECardType, type ICard, type ICardSuit, type ICardType } from
 
 // Card class
 export class Card implements ICard {
+  private visible: boolean = true;
+
   constructor(
     public cardType: ECardType,
-    public cardSuit: ECardSuit
-  ) {}
+    public cardSuit: ECardSuit,
+    visible: boolean = true
+  ) {
+    this.visible = visible;
+  }
 
   // Get the full card type info
   getCardTypeInfo(): ICardType {
@@ -22,6 +27,16 @@ export class Card implements ICard {
     const typeInfo = this.getCardTypeInfo();
     const suitInfo = this.getCardSuitInfo();
     return `${typeInfo.name}${suitInfo.name}`;
+  }
+
+  // Check if card is visible
+  isVisible(): boolean {
+    return this.visible;
+  }
+
+  // Set card visibility
+  setVisible(visible: boolean): void {
+    this.visible = visible;
   }
 }
 

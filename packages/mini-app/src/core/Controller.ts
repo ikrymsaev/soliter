@@ -5,6 +5,7 @@ import { EGameEvent, EGameAction } from "./lib/events";
 import { TempBucket } from "./objects/TempBucket";
 import { observable, type IObservable } from "./lib/Observable";
 import { TempSlot } from "./objects/TempSlot";
+import { Column } from "./objects/Column";
 import type { IColumn, IResultSlot, ITempBucket, ITempSlot, IDeck, ICard } from "./interfaces";
 
 export class Controller {
@@ -211,6 +212,55 @@ export class Controller {
         });
 
         return true;
+    }
+
+    // Метод для перемещения стопки карт
+    public moveStack = (sourceColumn: IColumn, fromIndex: number, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck): boolean => {
+        // Проверяем, что можем переместить стопку из исходной колонки
+        if (!sourceColumn.canMoveStack(fromIndex)) {
+            return false;
+        }
+
+        const stack = sourceColumn.getMovableStack(fromIndex);
+        
+        // Для колонок проверяем, можем ли принять стопку
+        if (targetSlot instanceof Column) {
+            if (!targetSlot.canAcceptStack(stack)) {
+                return false;
+            }
+        } else {
+            // Для других слотов перемещаем только первую карту
+            if (stack.length > 1) {
+                return false;
+            }
+            return this.moveCard(stack[0], targetSlot);
+        }
+
+        // Удаляем стопку из исходной колонки
+        const removedStack = sourceColumn.removeStack(fromIndex);
+        
+        // Добавляем стопку в целевую колонку
+        targetSlot.addStack(removedStack);
+
+        // Уведомляем об изменении состояния
+        this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
+            action: EGameAction.MOVE_STACK,
+            cards: removedStack, 
+            sourceSlot: sourceColumn, 
+            targetSlot 
+        });
+
+        return true;
+    }
+
+    // Метод для получения стопки карт, которую можно переместить
+    public getMovableStack = (sourceColumn: IColumn, fromIndex: number): ICard[] => {
+        return sourceColumn.getMovableStack(fromIndex);
+    }
+
+    // Метод для проверки, можно ли переместить стопку
+    public canMoveStack = (sourceColumn: IColumn, fromIndex: number): boolean => {
+        return sourceColumn.canMoveStack(fromIndex);
     }
 
     // Метод для получения всех слотов игры

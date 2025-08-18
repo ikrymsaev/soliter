@@ -44,4 +44,5 @@ export interface ICard {
     getCardTypeInfo(): ICardType;
     getCardSuitInfo(): ICardSuit;
     getDisplayName(): string;
+    isVisible(): boolean;
 }

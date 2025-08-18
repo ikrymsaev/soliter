@@ -9,7 +9,8 @@ export class ColumnRules implements ISlotRules<IColumn> {
         
         // Если колонка пустая, можно положить только короля
         if (!topCard) {
-            return card.cardType === 'K';
+            // return card.cardType === 'K';
+            return true;
         }
         
         // Карты должны быть разного цвета и идти по убыванию
