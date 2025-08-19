@@ -21,12 +21,25 @@ function App() {
     setCurrentGame(null);
   };
 
+  const handleNewGame = () => {
+    if (currentGame) {
+      const newGame = new Game(currentGame.rulesType);
+      setCurrentGame(newGame);
+    }
+  };
+
   if (currentState === 'selector') {
     return <GameSelector onGameSelect={handleGameSelect} />;
   }
 
   if (currentState === 'game' && currentGame) {
-    return <GameScreen game={currentGame} onBackToMenu={handleBackToMenu} />;
+    return (
+      <GameScreen 
+        game={currentGame} 
+        onBackToMenu={handleBackToMenu}
+        onNewGame={handleNewGame}
+      />
+    );
   }
 
   return <GameSelector onGameSelect={handleGameSelect} />;

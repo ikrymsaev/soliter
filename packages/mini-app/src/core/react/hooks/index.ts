@@ -1,13 +1,17 @@
 // Основные хуки
-export { useController, useControllerActions } from './useController';
-export { useEventEmitter, useEmitEvent, useOnEvent } from './useEventEmitter';
-export { useObserve as useObservable } from './useObserve';
-export { useClicksState, useSelectedCard } from './useControllerStates';
+export { useController } from './useController';
+export { useControllerStates } from './useControllerStates';
+export { useEventEmitter } from './useEventEmitter';
+export { useObserve } from './useObserve';
+export { useColumn } from './useColumn';
+export { useColumnCards } from './useColumn';
+export { useResultCards } from './useResultCards';
+export { useTempBucket } from './useTempBucket';
+export { useDrawnCards, useDrawnCardsCards, useDeckCardCount } from './useDrawnCards';
+export { useGameState } from './useGameState';
 
 // Специализированные хуки
-export { useTempBucket, useTempSlot, useTempSlotCard } from './useTempBucket';
-export { useColumn, useColumnCards } from './useColumn';
-export { useDrawnCards, useDrawnCardsCards, useDeckCardCount } from './useDrawnCards';
+export { useTempSlot, useTempSlotCard } from './useTempBucket';
 
 // Типы событий
 export { EGameEvent as GameEventType, EGameAction as GameActionType } from '../../lib/events';

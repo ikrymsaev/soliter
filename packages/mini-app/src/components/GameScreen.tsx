@@ -8,9 +8,10 @@ import { ESolitaireRules } from "../core/rules/GameRulesFactory";
 interface GameScreenProps {
   game: Game;
   onBackToMenu: () => void;
+  onNewGame: () => void;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = ({ game, onBackToMenu }) => {
+export const GameScreen: React.FC<GameScreenProps> = ({ game, onBackToMenu, onNewGame }) => {
   const getGameName = (rulesType: ESolitaireRules) => {
     switch (rulesType) {
       case ESolitaireRules.CLASSIC:
@@ -47,7 +48,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({ game, onBackToMenu }) =>
       <div className="flex-1">
         <EventEmitterProvider>
           <ControllerProvider game={game}>
-            <GameCmp game={game} />
+            <GameCmp 
+              game={game} 
+              onNewGame={onNewGame}
+              onBackToMenu={onBackToMenu}
+            />
           </ControllerProvider>
         </EventEmitterProvider>
       </div>

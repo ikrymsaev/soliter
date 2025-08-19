@@ -6,6 +6,7 @@ import { TempSlot } from "./objects/TempSlot";
 import { Column } from "./objects/Column";
 import type { IColumn, IResultSlot, ITempBucket, ITempSlot, IDeck, ICard } from "./interfaces";
 import type { IDrawnCardsArea } from "./interfaces/IDrawnCardsArea";
+import { updateGameState } from "./react/hooks/useGameState";
 
 export class Controller {
     public clicks: IObservable<number> = observable(0);
@@ -141,6 +142,9 @@ export class Controller {
             sourceSlot, 
             deck 
         });
+
+        // Проверяем состояние игры после возврата карты
+        this.checkGameCompletion();
         
         return true;
     }
@@ -280,6 +284,9 @@ export class Controller {
             targetSlot 
         });
 
+        // Проверяем состояние игры после хода
+        this.checkGameCompletion();
+
         return true;
     }
 
@@ -335,6 +342,9 @@ export class Controller {
             targetSlot 
         });
 
+        // Проверяем состояние игры после хода
+        this.checkGameCompletion();
+
         console.log('Stack moved successfully');
         return true;
     }
@@ -380,6 +390,9 @@ export class Controller {
                 deck: deck as any,
                 drawnCardsArea
             });
+
+            // Проверяем состояние игры после вытягивания карты
+            this.checkGameCompletion();
         }
         
         return card;
@@ -434,6 +447,9 @@ export class Controller {
             deck: deck as any, 
             targetSlot 
         });
+
+        // Проверяем состояние игры после перемещения карты из колоды
+        this.checkGameCompletion();
         
         return true;
     }
@@ -493,5 +509,14 @@ export class Controller {
 
     public getGame = () => {
         return this.game;
+    }
+
+    /**
+     * Проверяет завершение игры и обновляет состояние
+     */
+    private checkGameCompletion = () => {
+        const isCompleted = this.isGameCompleted();
+        const isWon = isCompleted; // В пасьянсе победа = завершение игры
+        updateGameState(isCompleted, isWon);
     }
 }
