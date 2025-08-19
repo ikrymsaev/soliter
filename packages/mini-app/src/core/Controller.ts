@@ -22,6 +22,7 @@ export class Controller {
         this.eventEmitter.on(EGameEvent.RESULT_SLOT_CLICK, this.clickResultSlot);
         this.eventEmitter.on(EGameEvent.TEMP_BUCKET_CLICK, this.clickTempBucket);
         this.eventEmitter.on(EGameEvent.DECK_CLICK, this.clickDeck);
+        this.eventEmitter.on(EGameEvent.DRAG_END, this.dragEnd);
     }
 
     private clickCard = (data: { card: ICard }) => {
@@ -106,6 +107,11 @@ export class Controller {
                 this.restartDeck();
             }
         }
+    }
+
+    private dragEnd = (data: { card: ICard }) => {
+        // При завершении перетаскивания снимаем выделение с карты
+        this.setSelectedCard(null);
     }
 
     // Метод для возврата карты в колоду

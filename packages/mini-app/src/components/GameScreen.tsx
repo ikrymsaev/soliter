@@ -45,7 +45,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ game, onBackToMenu, onNe
       </div>
 
       {/* Игровое поле */}
-      <div className="flex-1">
+      <div className="flex-1 max-w-4xl mx-auto">
         <EventEmitterProvider>
           <ControllerProvider game={game}>
             <GameCmp 
