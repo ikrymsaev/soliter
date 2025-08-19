@@ -1,5 +1,5 @@
 import { observable, type IObservable } from "../lib/Observable";
-import type { ISlotRules } from "../rules/ISlotRules";
+import type { ISlotRules } from "../rules/interfaces";
 import type { IResultSlot, ICard } from "../interfaces";
 import { ECardSuit } from "../interfaces/ICard";
 

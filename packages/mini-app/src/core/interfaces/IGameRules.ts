@@ -5,8 +5,13 @@ import type { ITempSlot } from "./ITempSlot";
 import type { IDeck } from "./IDeck";
 import type { ICard } from "./ICard";
 import type { IResultBucket } from "./IResultBucket";
+import type { ISlotRules } from "../rules/interfaces";
 
 export interface IGameRules {
+    readonly columnRules: ISlotRules<IColumn>;
+    readonly resultSlotRules: ISlotRules<IResultSlot>;
+    readonly tempBucketRules: ISlotRules<ITempBucket>;
+
     /**
      * Проверяет, может ли колонка принять карту
      */

@@ -1,5 +1,5 @@
 import { observable } from "../lib/Observable";
-import type { ISlotRules } from "../rules/ISlotRules";
+import type { ISlotRules } from "../rules/interfaces";
 import type { IColumn, ICard } from "../interfaces";
 
 export class Column implements IColumn {

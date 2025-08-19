@@ -1,38 +1,36 @@
-import { Field } from "./objects/Field";
-import { Deck } from "./objects/Deck";
-import { ResultBucket } from "./objects/ResultBucket";
-import { TempBucket } from "./objects/TempBucket";
-import type { IGameRules } from "./interfaces/IGameRules";
-import { GameRulesFactory, GameRulesType } from "./rules/GameRulesFactory";
-import type { Card } from "./objects/Card";
-import { TempBucketRules } from "./rules/TempBucketRules";
+import type { ITempBucket, IResultBucket, IDeck, IField, ICard, IGameRules } from "./interfaces";
+import { GameRulesFactory, ESolitaireRules } from "./rules/GameRulesFactory";
+import { Field, Deck, ResultBucket, TempBucket } from "./objects";
 
 export class Game {
-    private temp: TempBucket = new TempBucket(new TempBucketRules());
-    private result: ResultBucket = new ResultBucket();
-    private deck: Deck = new Deck();
-    private field: Field;
+    private temp: ITempBucket;
+    private result: IResultBucket;
+    private deck: IDeck;
+    private field: IField;
     private rules: IGameRules;
 
-    constructor(rulesType: GameRulesType = GameRulesType.CLASSIC_SOLITAIRE) {
+    constructor(rulesType: ESolitaireRules = ESolitaireRules.CLASSIC) {
         this.rules = GameRulesFactory.createRules(rulesType);
+        this.deck = new Deck();
         this.deck.shuffle();
-        this.field = new Field(this.deck);
+        this.field = new Field(this.deck, this.rules.columnRules);
+        this.temp = new TempBucket(this.rules.tempBucketRules);
+        this.result = new ResultBucket(this.rules.resultSlotRules);
     }
 
-    public getDeck(): Deck {
+    public getDeck(): IDeck {
         return this.deck;
     }
 
-    public getField(): Field {
+    public getField(): IField {
         return this.field;
     }
 
-    public getTemp(): TempBucket {
+    public getTemp(): ITempBucket {
         return this.temp;
     }
 
-    public getResult(): ResultBucket {
+    public getResult(): IResultBucket {
         return this.result;
     }
 
@@ -65,7 +63,7 @@ export class Game {
     /**
      * Получает доступные ходы для карты
      */
-    public getAvailableMoves(card: Card) {
+    public getAvailableMoves(card: ICard) {
         return this.rules.getAvailableMoves(card, this.getAllSlots());
     }
 }

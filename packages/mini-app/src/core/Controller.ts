@@ -14,7 +14,6 @@ export class Controller {
         private readonly eventEmitter: EventEmitter,
         private readonly game: Game,
     ) {
-
         this.eventEmitter.on(EGameEvent.CARD_CLICK, this.clickCard);
         this.eventEmitter.on(EGameEvent.CLICK_OUTSIDE, this.clickOutside);
         this.eventEmitter.on(EGameEvent.COLUMN_CLICK, this.clickColumn);
@@ -56,7 +55,7 @@ export class Controller {
         if (!selectedCard) {
             return;
         }
-        const success = this.moveCard(selectedCard, data.slot);
+        this.moveCard(selectedCard, data.slot);
         this.setSelectedCard(null);
     }
 
@@ -66,7 +65,7 @@ export class Controller {
         if (!selectedCard) {
             return;
         }
-        const success = this.moveCard(selectedCard, data.slot);
+        this.moveCard(selectedCard, data.slot);
         this.setSelectedCard(null);
     }
 

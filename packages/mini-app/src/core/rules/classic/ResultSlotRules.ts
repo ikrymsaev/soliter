@@ -1,6 +1,6 @@
-import type { ICard } from "../interfaces";
-import type { ISlotRules } from "./ISlotRules";
-import type { IResultSlot } from "../interfaces";
+import type { ICard } from "../../interfaces";
+import type { ISlotRules } from "../interfaces";
+import type { IResultSlot } from "../../interfaces";
 
 export class ResultSlotRules implements ISlotRules<IResultSlot> {
     canAcceptCard(resultSlot: IResultSlot, card?: ICard): boolean {

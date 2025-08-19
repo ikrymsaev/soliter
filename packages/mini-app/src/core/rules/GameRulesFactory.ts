@@ -1,21 +1,20 @@
 import type { IGameRules } from "../interfaces/IGameRules";
-import { ClassicSolitaireRules } from "./ClassicSolitaireRules";
+import { ClassicRules } from "./classic/ClassicRules";
 
-export enum GameRulesType {
-    CLASSIC_SOLITAIRE = "classic_solitaire",
-    // Можно добавить другие варианты правил в будущем
-    // SPIDER_SOLITAIRE = "spider_solitaire",
-    // KLONDIKE = "klondike",
+export enum ESolitaireRules {
+    CLASSIC = "classic",
+    KLONDIKE = "klondike",
+    // SPIDER = "spider",
 }
 
 export class GameRulesFactory {
     /**
      * Создает экземпляр правил игры по типу
      */
-    static createRules(rulesType: GameRulesType): IGameRules {
+    static createRules(rulesType: ESolitaireRules): IGameRules {
         switch (rulesType) {
-            case GameRulesType.CLASSIC_SOLITAIRE:
-                return new ClassicSolitaireRules();
+            case ESolitaireRules.CLASSIC:
+                return new ClassicRules();
             default:
                 throw new Error(`Unknown game rules type: ${rulesType}`);
         }
@@ -24,7 +23,7 @@ export class GameRulesFactory {
     /**
      * Получает доступные типы правил
      */
-    static getAvailableRulesTypes(): GameRulesType[] {
-        return Object.values(GameRulesType);
+    static getAvailableRulesTypes(): ESolitaireRules[] {
+        return Object.values(ESolitaireRules);
     }
 }

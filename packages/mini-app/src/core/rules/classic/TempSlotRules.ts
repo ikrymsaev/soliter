@@ -1,5 +1,5 @@
-import type { ITempSlot } from "../interfaces";
-import type { ISlotRules } from "./ISlotRules";
+import type { ITempSlot } from "../../interfaces";
+import type { ISlotRules } from "../interfaces";
 
 export class TempSlotRules implements ISlotRules<ITempSlot> {
     canAcceptCard(tempSlot: ITempSlot): boolean {

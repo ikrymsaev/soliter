@@ -1,5 +1,5 @@
 import { TempSlot } from "./TempSlot";
-import type { ISlotRules } from "../rules/ISlotRules";
+import type { ISlotRules } from "../rules/interfaces";
 import type { ITempBucket, ITempSlot } from "../interfaces";
 import type { ICard } from "../interfaces/ICard";
 

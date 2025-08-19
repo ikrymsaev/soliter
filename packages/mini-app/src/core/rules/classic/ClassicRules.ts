@@ -1,20 +1,27 @@
-import type { IGameRules } from "../interfaces/IGameRules";
-import type { ICard } from "../interfaces/ICard";
-import { ECardType } from "../interfaces/ICard";
-import { Column } from "../objects/Column";
-import { TempBucket } from "../objects/TempBucket";
-import { TempSlot } from "../objects/TempSlot";
-import { Deck } from "../objects/Deck";
-import { ResultSlot } from "../objects/ResultSlot";
+import type { IGameRules } from "../../interfaces/IGameRules";
+import type { ICard } from "../../interfaces/ICard";
+import { ECardType } from "../../interfaces/ICard";
+import { Column } from "../../objects/Column";
+import { TempBucket } from "../../objects/TempBucket";
+import { TempSlot } from "../../objects/TempSlot";
+import { Deck } from "../../objects/Deck";
+import { ResultSlot } from "../../objects/ResultSlot";
 import { ColumnRules } from "./ColumnRules";
 import { ResultSlotRules } from "./ResultSlotRules";
 import { TempBucketRules } from "./TempBucketRules";
-import type { IColumn, IDeck, IResultBucket, IResultSlot, ITempBucket, ITempSlot } from "../interfaces";
+import type { IColumn, IDeck, IResultBucket, IResultSlot, ITempBucket, ITempSlot } from "../../interfaces";
+import type { ISlotRules } from "../interfaces";
 
-export class ClassicSolitaireRules implements IGameRules {
-    private columnRules = new ColumnRules();
-    private resultSlotRules = new ResultSlotRules();
-    private tempBucketRules = new TempBucketRules();
+export class ClassicRules implements IGameRules {
+    readonly columnRules: ISlotRules<IColumn>;
+    readonly resultSlotRules: ISlotRules<IResultSlot>;
+    readonly tempBucketRules: ISlotRules<ITempBucket>;
+
+    constructor() {
+        this.columnRules = new ColumnRules();
+        this.resultSlotRules = new ResultSlotRules();
+        this.tempBucketRules = new TempBucketRules();
+    }
     
     canColumnAcceptCard(column: IColumn, card: ICard): boolean {
         return this.columnRules.canAcceptCard(column, card);

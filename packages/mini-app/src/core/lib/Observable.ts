@@ -71,81 +71,35 @@ export const selector = <D extends IObservable, S extends SelectorFn<D>, R exten
   selectorFn: S
 ): IObservable<R> => new ObservedSelector(dep, selectorFn)
 
-type DepsArr1 = [IObservable]
-type DepsArr2 = [IObservable, IObservable]
-type DepsArr3 = [IObservable, IObservable, IObservable]
-type DepsArr4 = [IObservable, IObservable, IObservable, IObservable]
-type DepsArr5 = [IObservable, IObservable, IObservable, IObservable, IObservable]
-type DepsArr = DepsArr1 | DepsArr2 | DepsArr3 | DepsArr4 | DepsArr5
-type SubscribetTupple = [any, any, any, any, any]
-type Compute1<D extends DepsArr1> = (arg_0: ReturnType<D[0]['get']>, ...args: any[]) => any
-type Compute2<D extends DepsArr2> = (
-  arg_0: ReturnType<D[0]['get']>,
-  arg_1: ReturnType<D[1]['get']>,
-  ...args: any[]
-) => any
-type Compute3<D extends DepsArr3> = (
-  arg_0: ReturnType<D[0]['get']>,
-  arg_1: ReturnType<D[1]['get']>,
-  arg_2: ReturnType<D[2]['get']>,
-  ...args: any[]
-) => any
-type Compute4<D extends DepsArr4> = (
-  arg_0: ReturnType<D[0]['get']>,
-  arg_1: ReturnType<D[1]['get']>,
-  arg_2: ReturnType<D[2]['get']>,
-  arg_3: ReturnType<D[3]['get']>,
-  ...args: any[]
-) => any
-type Compute5<D extends DepsArr5> = (
-  arg_0: ReturnType<D[0]['get']>,
-  arg_1: ReturnType<D[1]['get']>,
-  arg_2: ReturnType<D[2]['get']>,
-  arg_3: ReturnType<D[3]['get']>,
-  arg_4: ReturnType<D[4]['get']>,
-  ...args: any[]
-) => any
+// Упрощенная типизация с использованием infer
+type ExtractObservableTypes<T extends readonly IObservable[]> = {
+  [K in keyof T]: T[K] extends IObservable<infer U> ? U : never
+}
 
-type ComputeProps<D extends DepsArr> = D extends DepsArr1
-  ? Parameters<Compute1<D>>
-  : D extends DepsArr2
-    ? Parameters<Compute2<D>>
-    : D extends DepsArr3
-      ? Parameters<Compute3<D>>
-      : D extends DepsArr4
-        ? Parameters<Compute4<D>>
-        : D extends DepsArr5
-          ? Parameters<Compute5<D>>
-          : []
-
-type Compute<D> = D extends DepsArr1
-  ? Compute1<D>
-  : D extends DepsArr2
-    ? Compute2<D>
-    : D extends DepsArr3
-      ? Compute3<D>
-      : D extends DepsArr4
-        ? Compute4<D>
-        : D extends DepsArr5
-          ? Compute5<D>
-          : (...args: any[]) => never
+type ComputeFunction<T extends readonly IObservable[], R = any> = (
+  ...args: ExtractObservableTypes<T>
+) => R
 
 type Options<R> = {
   hasDiffNf?: (prev?: R, next?: R) => boolean
 }
 
-export class ObservedComputed<C extends Compute<D>, D extends DepsArr, R extends ReturnType<C>> {
-  private readonly subscribedValues: ComputeProps<D> | [] = []
+export class ObservedComputed<
+  T extends readonly IObservable[],
+  F extends ComputeFunction<T, R>,
+  R = ReturnType<F>
+> {
+  private readonly subscribedValues: ExtractObservableTypes<T> = [] as any
   private readonly options: Options<R> = {}
   private readonly listeners: Set<ListenerFn<R>> = new Set()
   private computedValue?: R
 
-  constructor(computeFn: C, deps: D, options?: Options<R>) {
+  constructor(computeFn: F, deps: T, options?: Options<R>) {
     this.options = options ?? {}
     deps.forEach((dep, index) => {
-      this.subscribedValues[index] = dep.get()
+      ;(this.subscribedValues as any)[index] = dep.get()
       dep.subscribe((newValue) => {
-        this.subscribedValues[index] = newValue
+        ;(this.subscribedValues as any)[index] = newValue
         this.onChange(computeFn)
       })
     })
@@ -164,8 +118,8 @@ export class ObservedComputed<C extends Compute<D>, D extends DepsArr, R extends
     }
   }
 
-  private onChange = (computeFn: C): void => {
-    const newValue = computeFn(...(this.subscribedValues as SubscribetTupple))
+  private onChange = (computeFn: F): void => {
+    const newValue = computeFn(...this.subscribedValues)
     let hasDiff = this.computedValue !== newValue
     if (this.options.hasDiffNf) {
       hasDiff = this.options.hasDiffNf(this.computedValue, newValue)
@@ -177,8 +131,12 @@ export class ObservedComputed<C extends Compute<D>, D extends DepsArr, R extends
   }
 }
 
-export const computed = <C extends Compute<D>, D extends DepsArr, R extends ReturnType<C>>(
-  computeFn: C,
-  deps: D,
+export const computed = <
+  T extends readonly IObservable[],
+  F extends ComputeFunction<T, R>,
+  R = ReturnType<F>
+>(
+  computeFn: F,
+  deps: T,
   options?: Options<R>
 ): IObservable<R> => new ObservedComputed(computeFn, deps, options)

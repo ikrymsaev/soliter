@@ -1,3 +1,3 @@
-export { IGameRules } from "../interfaces/IGameRules";
-export { ClassicSolitaireRules } from "./ClassicSolitaireRules";
-export { GameRulesFactory, GameRulesType } from "./GameRulesFactory";
+export type { IGameRules } from "../interfaces/IGameRules";
+export { ClassicRules as ClassicSolitaireRules } from "./classic/ClassicRules";
+export { GameRulesFactory, type ESolitaireRules as GameRulesType } from "./GameRulesFactory";

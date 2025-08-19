@@ -1,21 +1,22 @@
 import { ResultSlot } from "./ResultSlot";
-import { ResultSlotRules } from "../rules/ResultSlotRules";
 import type { IResultBucket } from "../interfaces/IResultBucket";
 import type { ICard, IResultSlot } from "../interfaces";
 import { ECardSuit, ECardType } from "../interfaces/ICard";
+import type { ISlotRules } from "../rules/interfaces";
 
 export class ResultBucket implements IResultBucket {
-    private slots: Record<ECardSuit, ResultSlot> = {
-        [ECardSuit.BOOBY]: new ResultSlot(ECardSuit.BOOBY, new ResultSlotRules()),
-        [ECardSuit.CHERVY]: new ResultSlot(ECardSuit.CHERVY, new ResultSlotRules()),
-        [ECardSuit.PICKY]: new ResultSlot(ECardSuit.PICKY, new ResultSlotRules()),
-        [ECardSuit.TREF]: new ResultSlot(ECardSuit.TREF, new ResultSlotRules())
-    }; // 4 слота для 4 мастей
+    private slots: Record<ECardSuit, ResultSlot>; // 4 слота для 4 мастей
     public readonly id: string;
     public readonly type: 'result' = 'result';
 
-    constructor() {
+    constructor(slotRules: ISlotRules<IResultSlot>) {
         this.id = `result-bucket-${Date.now()}`;
+        this.slots = {
+            [ECardSuit.BOOBY]: new ResultSlot(ECardSuit.BOOBY, slotRules),
+            [ECardSuit.CHERVY]: new ResultSlot(ECardSuit.CHERVY, slotRules),
+            [ECardSuit.PICKY]: new ResultSlot(ECardSuit.PICKY, slotRules),
+            [ECardSuit.TREF]: new ResultSlot(ECardSuit.TREF, slotRules)
+        };
     }
 
     public getSlots(): Record<ECardSuit, ResultSlot> {

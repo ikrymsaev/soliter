@@ -1,13 +1,13 @@
 import { Column } from "./Column";
-import { ColumnRules } from "../rules/ColumnRules";
 import type { IField, IColumn, IDeck } from "../interfaces";
+import type { ISlotRules } from "../rules/interfaces";
 
 export class Field implements IField {
     private readonly _capacity: number = 8;
     private slots: Array<IColumn> = [];
 
-    constructor(deck: IDeck) {
-        this.slots = new Array(this._capacity).fill(null).map(() => new Column([], new ColumnRules()));
+    constructor(deck: IDeck, columnRules: ISlotRules<IColumn>) {
+        this.slots = new Array(this._capacity).fill(null).map(() => new Column([], columnRules));
         this.fillSlots(deck);
     }
 
