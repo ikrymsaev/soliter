@@ -45,4 +45,5 @@ export interface ICard {
     getCardSuitInfo(): ICardSuit;
     getDisplayName(): string;
     isVisible(): boolean;
+    setVisible(visible: boolean): void;
 }

@@ -1,20 +1,35 @@
+import { useState } from "react";
 import { Game } from "./core/Game";
-import { GameCmp } from "./components/GameCmp";
-import { EventEmitterProvider } from "./core/react/providers/EventEmitterProvider";
-import { ControllerProvider } from "./core/react/providers/ControllerProvider";
+import { GameSelector } from "./components/GameSelector";
+import { GameScreen } from "./components/GameScreen";
+import { ESolitaireRules } from "./core/rules/GameRulesFactory";
 
-const game = new Game();
+type AppState = 'selector' | 'game';
 
 function App() {
-  return (
-      <div className="flex flex-col">
-        <EventEmitterProvider>
-          <ControllerProvider game={game}>
-            <GameCmp game={game} />
-          </ControllerProvider>
-        </EventEmitterProvider>
-      </div>
-  )
+  const [currentState, setCurrentState] = useState<AppState>('selector');
+  const [currentGame, setCurrentGame] = useState<Game | null>(null);
+
+  const handleGameSelect = (gameType: ESolitaireRules) => {
+    const newGame = new Game(gameType);
+    setCurrentGame(newGame);
+    setCurrentState('game');
+  };
+
+  const handleBackToMenu = () => {
+    setCurrentState('selector');
+    setCurrentGame(null);
+  };
+
+  if (currentState === 'selector') {
+    return <GameSelector onGameSelect={handleGameSelect} />;
+  }
+
+  if (currentState === 'game' && currentGame) {
+    return <GameScreen game={currentGame} onBackToMenu={handleBackToMenu} />;
+  }
+
+  return <GameSelector onGameSelect={handleGameSelect} />;
 }
 
-export default App
+export default App;

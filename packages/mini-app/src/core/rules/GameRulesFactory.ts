@@ -1,5 +1,6 @@
 import type { IGameRules } from "../interfaces/IGameRules";
 import { ClassicRules } from "./classic/ClassicRules";
+import { KlondikeRules } from "./klondike/KlondikeRules";
 
 export enum ESolitaireRules {
     CLASSIC = "classic",
@@ -15,6 +16,8 @@ export class GameRulesFactory {
         switch (rulesType) {
             case ESolitaireRules.CLASSIC:
                 return new ClassicRules();
+            case ESolitaireRules.KLONDIKE:
+                return new KlondikeRules();
             default:
                 throw new Error(`Unknown game rules type: ${rulesType}`);
         }

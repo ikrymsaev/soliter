@@ -7,6 +7,7 @@ export { useClicksState, useSelectedCard } from './useControllerStates';
 // Специализированные хуки
 export { useTempBucket, useTempSlot, useTempSlotCard } from './useTempBucket';
 export { useColumn, useColumnCards } from './useColumn';
+export { useDrawnCards, useDrawnCardsCards, useDeckCardCount } from './useDrawnCards';
 
 // Типы событий
 export { EGameEvent as GameEventType, EGameAction as GameActionType } from '../../lib/events';

@@ -5,6 +5,7 @@ import { observable, type IObservable } from "./lib/Observable";
 import { TempSlot } from "./objects/TempSlot";
 import { Column } from "./objects/Column";
 import type { IColumn, IResultSlot, ITempBucket, ITempSlot, IDeck, ICard } from "./interfaces";
+import type { IDrawnCardsArea } from "./interfaces/IDrawnCardsArea";
 
 export class Controller {
     public clicks: IObservable<number> = observable(0);
@@ -84,13 +85,25 @@ export class Controller {
         const selectedCard = this.selectedCard.get();
         
         if (selectedCard) {
-            // Если выбрана карта, возвращаем её в колоду
-            if (this.returnCardToDeck(selectedCard)) {
+            // Проверяем правила игры для возврата карты в колоду
+            const rules = this.game.getRules();
+            if (rules.canReturnCardToDeck()) {
+                // Возвращаем карту в колоду
+                if (this.returnCardToDeck(selectedCard)) {
+                    this.setSelectedCard(null);
+                }
+            } else {
+                // Просто снимаем выделение с карты
                 this.setSelectedCard(null);
             }
         } else {
             // Если карта не выбрана, вытягиваем карту из колоды
-            this.drawCardFromDeck();
+            const card = this.drawCardFromDeck();
+            
+            // Если карта не вытянута (колода пуста), но есть вытянутые карты, перезапускаем колоду
+            if (!card) {
+                this.restartDeck();
+            }
         }
     }
 
@@ -132,8 +145,8 @@ export class Controller {
         return true;
     }
 
-    public findCardSlot = (card: ICard): IColumn | IResultSlot | ITempBucket | ITempSlot | null => {
-        const { columns, temp, result } = this.game.getAllSlots();
+    public findCardSlot = (card: ICard): IColumn | IResultSlot | ITempBucket | ITempSlot | IDrawnCardsArea | null => {
+        const { columns, temp, result, drawnCardsArea } = this.game.getAllSlots();
 
         // Проверяем колонки
         for (const column of columns) {
@@ -159,28 +172,42 @@ export class Controller {
             }
         }
 
-        // Карты из колоды не могут быть перенесены (они должны быть сначала вытянуты)
-        // Поэтому не возвращаем deck как слот
+        // Проверяем область вытянутых карт
+        if (drawnCardsArea) {
+            const drawnCards = drawnCardsArea.getCards();
+            if (drawnCards.includes(card)) {
+                return drawnCardsArea;
+            }
+        }
 
         return null;
     }
 
     // Метод для прямого переноса карты (для использования из UI)
-    public moveCard = (card: ICard, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck): boolean => {
+    public moveCard = (card: ICard, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea): boolean => {
         return this.tryMoveCard(card, targetSlot);
     }
 
     // Внутренний метод для попытки перемещения карты
-    private tryMoveCard = (card: ICard, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck): boolean => {
+    private tryMoveCard = (card: ICard, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea): boolean => {
         const rules = this.game.getRules();
         const sourceSlot = this.findCardSlot(card);
         
+        console.log('tryMoveCard:', {
+            card: card.getDisplayName(),
+            sourceSlot: sourceSlot ? 'found' : 'null',
+            targetSlot: 'target'
+        });
+        
         if (!sourceSlot) {
+            console.log('Source slot not found for card:', card.getDisplayName());
             return false;
         }
 
         // Проверяем правила игры
         const canMove = rules.canMoveCard(targetSlot, card);        
+        console.log('Can move:', canMove);
+        
         if (!canMove) {
             return false;
         }
@@ -209,23 +236,41 @@ export class Controller {
                 removed = sourceSlot.removeCard(card) || false;
             }
         }
+        console.log('Card removed from source:', removed);
+        
         if (!removed) {
             return false;
         }
 
+        // Если карта была удалена из колонки, открываем новую верхнюю карту
+        if (sourceSlot instanceof Column) {
+            const remainingCards = sourceSlot.getCards();
+            if (remainingCards.length > 0) {
+                const newTopCard = remainingCards[remainingCards.length - 1];
+                if (!newTopCard.isVisible()) {
+                    newTopCard.setVisible(true);
+                }
+            }
+        }
+
         // Добавляем карту в целевой слот
+        let added = false;
         if ('addCard' in targetSlot) {
             (targetSlot as any).addCard(card);
+            added = true;
         } else if ('addCardToSlot' in targetSlot) {
             const emptySlot = targetSlot.slots.find(slot => slot.isEmpty());
             if (emptySlot) {
                 (targetSlot as any).addCardToSlot(card, emptySlot);
+                added = true;
             } else {
                 return false;
             }
         } else {
             return false;
         }
+        
+        console.log('Card added to target:', added);
 
         // Уведомляем об изменении состояния
         this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
@@ -239,22 +284,28 @@ export class Controller {
     }
 
     // Метод для перемещения стопки карт
-    public moveStack = (sourceColumn: IColumn, fromIndex: number, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck): boolean => {
+    public moveStack = (sourceColumn: IColumn, fromIndex: number, targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea): boolean => {
+        console.log('moveStack called:', { fromIndex, targetSlotType: targetSlot.constructor.name });
+        
         // Проверяем, что можем переместить стопку из исходной колонки
         if (!sourceColumn.canMoveStack(fromIndex)) {
+            console.log('Cannot move stack from index:', fromIndex);
             return false;
         }
 
         const stack = sourceColumn.getMovableStack(fromIndex);
+        console.log('Stack to move:', stack.length, 'cards');
         
         // Для колонок проверяем, можем ли принять стопку
         if (targetSlot instanceof Column) {
             if (!targetSlot.canAcceptStack(stack)) {
+                console.log('Target column cannot accept stack');
                 return false;
             }
         } else {
             // Для других слотов перемещаем только первую карту
             if (stack.length > 1) {
+                console.log('Cannot move stack to non-column slot');
                 return false;
             }
             return this.moveCard(stack[0], targetSlot);
@@ -266,6 +317,16 @@ export class Controller {
         // Добавляем стопку в целевую колонку
         targetSlot.addStack(removedStack);
 
+        // Если стопка была удалена из колонки, открываем новую верхнюю карту
+        const remainingCards = sourceColumn.getCards();
+        if (remainingCards.length > 0) {
+            const newTopCard = remainingCards[remainingCards.length - 1];
+            if (!newTopCard.isVisible()) {
+                console.log('Opening new top card:', newTopCard.getDisplayName());
+                newTopCard.setVisible(true);
+            }
+        }
+
         // Уведомляем об изменении состояния
         this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
             action: EGameAction.MOVE_STACK,
@@ -274,6 +335,7 @@ export class Controller {
             targetSlot 
         });
 
+        console.log('Stack moved successfully');
         return true;
     }
 
@@ -296,6 +358,7 @@ export class Controller {
     public drawCardFromDeck = (): ICard | null => {
         const deck = this.game.getDeck();
         const rules = this.game.getRules();
+        const drawnCardsArea = this.game.getDrawnCardsArea();
         
         // Проверяем правила игры
         if (!rules.canDrawFromDeck(deck as any)) {
@@ -305,11 +368,17 @@ export class Controller {
         const card = deck.drawCard();
         
         if (card) {
+            // Если есть область для вытянутых карт (Косынка), добавляем туда
+            if (drawnCardsArea) {
+                drawnCardsArea.addCard(card);
+            }
+            
             // Уведомляем об изменении состояния
             this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
                 action: EGameAction.DRAW_CARD, 
                 card, 
-                deck: deck as any
+                deck: deck as any,
+                drawnCardsArea
             });
         }
         
@@ -317,7 +386,7 @@ export class Controller {
     }
 
     // Метод для переноса карты из колоды в слот
-    public moveCardFromDeckToSlot = (targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck): boolean => {
+    public moveCardFromDeckToSlot = (targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea): boolean => {
         const deck = this.game.getDeck();
         const rules = this.game.getRules();
         
@@ -380,10 +449,31 @@ export class Controller {
         });
     }
 
+    public restartDeck = (): void => {
+        const deck = this.game.getDeck();
+        const drawnCardsArea = this.game.getDrawnCardsArea();
+        
+        // Если есть область вытянутых карт и она не пуста
+        if (drawnCardsArea && !drawnCardsArea.isEmpty()) {
+            // Возвращаем все вытянутые карты в колоду
+            drawnCardsArea.returnAllCardsToDeck(deck);
+            
+            // Перемешиваем колоду
+            deck.shuffle();
+            
+            // Уведомляем об изменении состояния
+            this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
+                action: EGameAction.SHUFFLE_DECK, 
+                deck,
+                drawnCardsArea
+            });
+        }
+    }
+
     /**
      * Получает доступные ходы для карты
      */
-    public getAvailableMoves = (card: ICard): Array<IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck> => {
+    public getAvailableMoves = (card: ICard): Array<IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea> => {
         return this.game.getAvailableMoves(card as any);
     }
 

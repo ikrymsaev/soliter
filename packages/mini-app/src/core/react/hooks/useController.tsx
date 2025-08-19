@@ -22,6 +22,7 @@ export const useControllerActions = () => {
         returnCardToDeck: controller.returnCardToDeck,
         drawCardFromDeck: controller.drawCardFromDeck,
         shuffleDeck: controller.shuffleDeck,
+        restartDeck: controller.restartDeck,
         getAllSlots: controller.getAllSlots,
     };
 };

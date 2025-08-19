@@ -5,14 +5,16 @@ import { useSelectedCard } from '@/core/react/hooks/useControllerStates';
 import { EGameEvent } from '@/core/lib/events';
 import type { ICard } from '@/core/interfaces';
 import type { IColumn, IResultSlot, ITempSlot } from '@/core/interfaces';
+import type { IDrawnCardsArea } from '@/core/interfaces/IDrawnCardsArea';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   card: ICard;
   isSelected?: boolean;
-  sourceSlot?: IColumn | IResultSlot | ITempSlot;
+  sourceSlot?: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea;
   isAvailable?: boolean;
   stackIndex?: number; // Индекс карты в стопке
   isStackTop?: boolean; // Является ли карта верхней в стопке
+  isHidden?: boolean; // Скрыта ли карта (рубашкой вверх)
 }
 
 export const Card: React.FC<CardProps> = ({ 
@@ -23,6 +25,7 @@ export const Card: React.FC<CardProps> = ({
   isAvailable = true,
   stackIndex = 0,
   isStackTop = true,
+  isHidden = false,
   ...props
 }) => {
   const emitEvent = useEmitEvent();
@@ -52,13 +55,19 @@ export const Card: React.FC<CardProps> = ({
   const colorClasses = suitInfo.color === 'red' ? 'text-red-600' : 'text-black';
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging && isAvailable) {
+    if (!isDragging && isAvailable && !isHidden) {
       emitEvent.emit(EGameEvent.CARD_CLICK, { card });
       props.onClick?.(e);
     }
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    // Нельзя перетаскивать скрытые карты
+    if (isHidden) {
+      e.preventDefault();
+      return;
+    }
+
     // Проверяем, можно ли перетаскивать стопку с этой карты
     if (sourceSlot && 'canMoveStack' in sourceSlot && typeof stackIndex === 'number') {
       const canMove = sourceSlot.canMoveStack(stackIndex);
@@ -139,16 +148,16 @@ export const Card: React.FC<CardProps> = ({
         baseClasses,
         colorClasses,
         { 'border-blue-500 shadow-lg': isSelected || isActuallySelected },
-        { 'hover:border-gray-400 hover:shadow-lg': isAvailable },
-        { 'cursor-default': !isAvailable },
+        { 'hover:border-gray-400 hover:shadow-lg': isAvailable && !isHidden },
+        { 'cursor-default': !isAvailable || isHidden },
         { 'opacity-50': isBeingDragged }, // Скрываем карту во время перетаскивания
         className
       )}
-      title={card.getDisplayName()}
+      title={isHidden ? 'Скрытая карта' : card.getDisplayName()}
       data-card="true"
       data-stack-index={stackIndex}
       data-is-stack-top={isStackTop}
-      draggable={isAvailable ? 'true' : 'false'}
+      draggable={isAvailable && !isHidden ? 'true' : 'false'}
       onDragStart={handleDragStart}
       onDrag={(e) => {
         // Визуальная обратная связь при перетаскивании
@@ -169,7 +178,15 @@ export const Card: React.FC<CardProps> = ({
         zIndex: isBeingDragged ? 1000 : 'auto'
       }}
     >
-      <div className="text-xs p-1">{cardInfo.name}{suitInfo.name}</div>
+      {isHidden ? (
+        // Отображаем рубашку карты
+        <div className="w-full h-full bg-blue-600 border-2 border-blue-800 rounded-sm flex items-center justify-center">
+          <div className="text-white text-xs font-bold">♠</div>
+        </div>
+      ) : (
+        // Отображаем лицевую сторону карты
+        <div className="text-xs p-1">{cardInfo.name}{suitInfo.name}</div>
+      )}
     </div>
   );
 };

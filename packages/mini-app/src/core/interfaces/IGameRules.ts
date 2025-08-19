@@ -5,12 +5,15 @@ import type { ITempSlot } from "./ITempSlot";
 import type { IDeck } from "./IDeck";
 import type { ICard } from "./ICard";
 import type { IResultBucket } from "./IResultBucket";
-import type { ISlotRules } from "../rules/interfaces";
+import type { ISlotRules, IDealStrategy } from "../rules/interfaces";
+import type { IDrawnCardsArea } from "./IDrawnCardsArea";
 
 export interface IGameRules {
     readonly columnRules: ISlotRules<IColumn>;
     readonly resultSlotRules: ISlotRules<IResultSlot>;
     readonly tempBucketRules: ISlotRules<ITempBucket>;
+    readonly columnCount: number;
+    readonly dealStrategy: IDealStrategy;
 
     /**
      * Проверяет, может ли колонка принять карту
@@ -31,14 +34,14 @@ export interface IGameRules {
      * Проверяет, можно ли переместить карту из одного слота в другой
      */
     canMoveCard(
-        targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck,
+        targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea,
         card: ICard
     ): boolean;
     
     /**
      * Проверяет, можно ли переместить группу карт из колонки
      */
-    canMoveCardGroup(cards: ICard[], targetSlot: IColumn | IResultSlot | ITempBucket): boolean;
+    canMoveCardGroup(cards: ICard[], targetSlot: IColumn | IResultSlot | ITempBucket | IDrawnCardsArea): boolean;
     
     /**
      * Проверяет, является ли игра завершенной
@@ -51,6 +54,11 @@ export interface IGameRules {
     canDrawFromDeck(deck: IDeck): boolean;
     
     /**
+     * Проверяет, можно ли вернуть карту в колоду
+     */
+    canReturnCardToDeck(): boolean;
+    
+    /**
      * Получает доступные ходы для карты
      */
     getAvailableMoves(
@@ -60,6 +68,7 @@ export interface IGameRules {
             result: IResultSlot[];
             temp: ITempBucket;
             deck: IDeck;
+            drawnCardsArea?: IDrawnCardsArea;
         }
-    ): Array<IColumn | IResultSlot | ITempBucket | IDeck>;
+    ): Array<IColumn | IResultSlot | ITempBucket | IDeck | IDrawnCardsArea>;
 }

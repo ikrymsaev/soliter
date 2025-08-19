@@ -24,24 +24,31 @@ export const ColumnCmp = ({ columnId }: Props) => {
     return (
         <div className="flex flex-col w-16 min-h-24 relative">
             {/* Отображаем карты в колонке */}
-            {cards.map((card, index) => (
-                <DropZone
-                    key={`${card.cardType}-${card.cardSuit}-${index}`}
-                    targetSlot={column}
-                    className="relative"
-                    style={{ 
-                        marginTop: index === 0 ? 0 : -70,
-                        zIndex: index + 1 // Первые карты имеют меньший z-index, последние - больший
-                    }}
-                >
-                    <Card
-                        card={card}
-                        sourceSlot={column}
-                        stackIndex={index}
-                        isStackTop={index === cards.length - 1} // Верхняя карта в стопке
-                    />
-                </DropZone>
-            ))}
+            {cards.map((card, index) => {
+                const isLastCard = index === cards.length - 1;
+                // Карта скрыта, если она не видима
+                const isHidden = !card.isVisible();
+                
+                return (
+                    <DropZone
+                        key={`${card.cardType}-${card.cardSuit}-${index}`}
+                        targetSlot={column}
+                        className="relative"
+                        style={{ 
+                            marginTop: index === 0 ? 0 : -70,
+                            zIndex: index + 1 // Первые карты имеют меньший z-index, последние - больший
+                        }}
+                    >
+                        <Card
+                            card={card}
+                            sourceSlot={column}
+                            stackIndex={index}
+                            isStackTop={isLastCard} // Верхняя карта в стопке
+                            isHidden={isHidden} // Скрываем карту, если она не видима
+                        />
+                    </DropZone>
+                );
+            })}
             
             {/* Отображаем пустой слот */}
             {column.isEmpty() ? (

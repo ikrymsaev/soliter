@@ -2,9 +2,10 @@ import React from 'react';
 import { useController } from '@/core/react/hooks/useController';
 import { Column } from '@/core/objects/Column';
 import type { IColumn, IResultSlot, ITempBucket, ITempSlot, IDeck } from '@/core/interfaces';
+import type { IDrawnCardsArea } from '@/core/interfaces/IDrawnCardsArea';
 
 interface DropZoneProps {
-    targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck;
+    targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea;
     className?: string;
     children: React.ReactNode;
     onClick?: () => void;
@@ -76,6 +77,15 @@ export const DropZone: React.FC<DropZoneProps> = ({
                     }
                 }
                 if (foundCard) break;
+            }
+        }
+        
+        // Ищем в области вытянутых карт
+        if (!foundCard && allSlots.drawnCardsArea) {
+            const drawnCards = allSlots.drawnCardsArea.getCards();
+            foundCard = drawnCards.find(card => card.getDisplayName() === cardData);
+            if (foundCard) {
+                sourceSlot = allSlots.drawnCardsArea;
             }
         }
         

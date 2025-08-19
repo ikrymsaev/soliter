@@ -1,10 +1,10 @@
 import type { Game } from "../core/Game";
-import { Desk } from "./Desk";
-import { ResultCmp } from "./ResultBucket/ResultBucket";
 import { useEmitEvent } from "@/core/react/hooks/useEventEmitter";
 import { EGameEvent } from "@/core/lib/events";
 import { ClicksState } from "./test-components/ClicksState";
-import { TempBucketCmp } from "./TempBucket/TempBucket";
+import { ESolitaireRules } from "@/core/rules/GameRulesFactory";
+import { ClassicLayout } from "./Layouts/ClassicLayout";
+import { KlondikeLayout } from "./Layouts/KlondikeLayout";
 
 interface Props {
     game: Game;
@@ -71,20 +71,23 @@ export const GameCmp = ({ game }: Props) => {
 
     return (
         <div 
-            className="flex flex-col p-10 gap-10 min-h-screen bg-emerald-700"
+            className="flex flex-col p-10 gap-10"
             onClick={handleOutsideClick}
             onDragEnter={handleGameDragEnter}
             onDragOver={handleGameDragOver}
             onDragEnd={handleGameDragEnd}
         >
-            <div className="flex flex-row justify-between">
-                <TempBucketCmp />
-                <ResultCmp />
-            </div>
-            <div className="flex flex-row justify-between">
-                <Desk />
-            </div>
+            <GameLayout game={game} />
             <ClicksState />
         </div>
     )
+}
+
+const GameLayout = ({ game }: { game: Game }) => {
+    const Layout = {
+        [ESolitaireRules.CLASSIC]: ClassicLayout,
+        [ESolitaireRules.KLONDIKE]: KlondikeLayout,
+    }[game.rulesType];
+
+    return <Layout />;
 }

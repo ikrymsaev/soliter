@@ -9,18 +9,23 @@ import { ResultSlot } from "../../objects/ResultSlot";
 import { ColumnRules } from "./ColumnRules";
 import { ResultSlotRules } from "./ResultSlotRules";
 import { TempBucketRules } from "./TempBucketRules";
+import { ClassicDealStrategy } from "./ClassicDealStrategy";
 import type { IColumn, IDeck, IResultBucket, IResultSlot, ITempBucket, ITempSlot } from "../../interfaces";
 import type { ISlotRules } from "../interfaces";
+import type { IDrawnCardsArea } from "../../interfaces/IDrawnCardsArea";
 
 export class ClassicRules implements IGameRules {
     readonly columnRules: ISlotRules<IColumn>;
     readonly resultSlotRules: ISlotRules<IResultSlot>;
     readonly tempBucketRules: ISlotRules<ITempBucket>;
+    readonly columnCount: number = 8;
+    readonly dealStrategy: ClassicDealStrategy;
 
     constructor() {
         this.columnRules = new ColumnRules();
         this.resultSlotRules = new ResultSlotRules();
         this.tempBucketRules = new TempBucketRules();
+        this.dealStrategy = new ClassicDealStrategy();
     }
     
     canColumnAcceptCard(column: IColumn, card: ICard): boolean {
@@ -36,7 +41,7 @@ export class ClassicRules implements IGameRules {
     }
     
     canMoveCard(
-        targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck,
+        targetSlot: IColumn | IResultSlot | ITempBucket | ITempSlot | IDeck | IDrawnCardsArea,
         card: ICard
     ): boolean {
         // Проверяем специфичные правила для каждого типа слота
@@ -55,7 +60,7 @@ export class ClassicRules implements IGameRules {
         return false;
     }
     
-    canMoveCardGroup(cards: ICard[], targetSlot: IColumn | IResultSlot | ITempBucket): boolean {
+    canMoveCardGroup(cards: ICard[], targetSlot: IColumn | IResultSlot | ITempBucket | IDrawnCardsArea): boolean {
         // Проверяем, что карты в группе образуют валидную последовательность
         if (!this.isValidCardSequence(cards)) {
             return false;
@@ -91,6 +96,11 @@ export class ClassicRules implements IGameRules {
         return deck.getCardCount() > 0;
     }
     
+    canReturnCardToDeck(): boolean {
+        // В классическом пасьянсе можно возвращать карты в колоду
+        return true;
+    }
+    
     getAvailableMoves(
         card: ICard,
         allSlots: {
@@ -98,9 +108,10 @@ export class ClassicRules implements IGameRules {
             result: IResultSlot[];
             temp: ITempBucket;
             deck: IDeck;
+            drawnCardsArea?: IDrawnCardsArea;
         }
-    ): Array<IColumn | IResultSlot | ITempBucket | IDeck> {
-        const availableMoves: Array<IColumn | IResultSlot | ITempBucket | IDeck> = [];
+    ): Array<IColumn | IResultSlot | ITempBucket | IDeck | IDrawnCardsArea> {
+        const availableMoves: Array<IColumn | IResultSlot | ITempBucket | IDeck | IDrawnCardsArea> = [];
         
         // Проверяем все возможные целевые слоты
         for (const column of allSlots.columns) {
@@ -149,27 +160,25 @@ export class ClassicRules implements IGameRules {
         return true;
     }
     
-
-    
     /**
      * Получает числовое значение карты
      */
     private getCardValue(card: ICard): number {
         const cardType = card.cardType;
         switch (cardType) {
-            case ECardType.ACE: return 1;
-            case ECardType.TWO: return 2;
-            case ECardType.THREE: return 3;
-            case ECardType.FOUR: return 4;
-            case ECardType.FIVE: return 5;
-            case ECardType.SIX: return 6;
-            case ECardType.SEVEN: return 7;
-            case ECardType.EIGHT: return 8;
-            case ECardType.NINE: return 9;
-            case ECardType.TEN: return 10;
-            case ECardType.JACK: return 11;
-            case ECardType.QUEEN: return 12;
-            case ECardType.KING: return 13;
+            case 'A': return 1;
+            case '2': return 2;
+            case '3': return 3;
+            case '4': return 4;
+            case '5': return 5;
+            case '6': return 6;
+            case '7': return 7;
+            case '8': return 8;
+            case '9': return 9;
+            case '10': return 10;
+            case 'J': return 11;
+            case 'Q': return 12;
+            case 'K': return 13;
             default: return 0;
         }
     }
