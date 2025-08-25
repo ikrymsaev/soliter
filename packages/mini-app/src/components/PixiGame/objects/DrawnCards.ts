@@ -1,10 +1,9 @@
 import type { IDrawnCardsArea } from "@/core/interfaces/IDrawnCardsArea";
 import type { IDeck } from "@/core/interfaces";
 import type { Controller } from "@/core/GameController";
-import type { EventEmitter } from "@/core/lib/EventEmitter";
-import { GameEventType } from "@/core/react/hooks";
 import * as PIXI from "pixi.js";
 import { Card } from "./Card";
+import { EPixiEvent } from "../events";
 
 export class DrawnCards extends PIXI.Container {
     private deckButton!: PIXI.Graphics;
@@ -22,7 +21,7 @@ export class DrawnCards extends PIXI.Container {
         private readonly drawnCardsArea: IDrawnCardsArea,
         readonly data: IDeck,
         private readonly controller: Controller,
-        private readonly eventEmitter: PIXI.EventEmitter
+        private readonly pixiEmitter: PIXI.EventEmitter
     ) {
         super();
         this.drawnCardsArea.getCardsObservable().subscribe(() => {
@@ -40,8 +39,7 @@ export class DrawnCards extends PIXI.Container {
     }
 
     private onDeckClick = () => {
-        console.log('DrawnCards[deck-click]');
-        this.eventEmitter.emit(GameEventType.DECK_CLICK, {});
+        this.pixiEmitter.emit(EPixiEvent.Click, { element: this });
     }
 
     render() {
@@ -149,7 +147,7 @@ export class DrawnCards extends PIXI.Container {
         // Показываем последнюю вытянутую карту
         if (drawnCards.length > 0) {
             const lastCard = drawnCards[drawnCards.length - 1];
-            this.currentCard = new Card(lastCard, this.controller, this.eventEmitter);
+            this.currentCard = new Card(lastCard, this.controller, this.pixiEmitter);
             this.currentCard.x = this.cardWidth + this.gap;
             this.addChild(this.currentCard);
         }

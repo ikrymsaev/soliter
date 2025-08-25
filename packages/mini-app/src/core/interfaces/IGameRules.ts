@@ -21,7 +21,15 @@ export interface IGameRules {
      */
     canInteractWithCard(
         card: ICard,
-        sourceSlot: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea
+        sourceSlot: IColumn | IResultSlot | ITempSlot | IDeck | IDrawnCardsArea
+    ): boolean;
+
+    /**
+     * Проверяет доступна ли стопка карт для взаимодействия.
+     */
+    canInteractWithStack(
+        sourceSlot: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea,
+        card: ICard
     ): boolean;
 
     /**

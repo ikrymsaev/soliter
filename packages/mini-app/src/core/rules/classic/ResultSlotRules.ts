@@ -33,6 +33,11 @@ export class ResultSlotRules implements ISlotRules<IResultSlot> {
         return topCard === card;
     }
 
+    canInteractWithStack(_resultSlot: IResultSlot, _card?: ICard): boolean {
+        // Результатные слоты не поддерживают взаимодействие со стопкой
+        return false;
+    }
+
     private getCardValue(card: ICard): number {
         const cardType = card.cardType;
         switch (cardType) {

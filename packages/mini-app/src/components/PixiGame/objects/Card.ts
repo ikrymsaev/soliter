@@ -9,6 +9,8 @@ export class Card extends PIXI.Container {
     private cardWidth = 60;
     private cardHeight = 90;
     private isSelected = false;
+    private isSelectedByStack = false;
+    private isPointerDown = false;
     // Делаем карту интерактивной
     eventMode: PIXI.EventMode = 'static';
     cursor: PIXI.Cursor = 'pointer';
@@ -21,12 +23,13 @@ export class Card extends PIXI.Container {
         super();
         this.on('pointerdown', this.onPointerDown);
         this.on('pointerup', this.onPointerUp);
+        this.on('pointerupoutside', this.onPointerUpOutside);
         this.subscribeToSelectedCard();
         this.render();
     }
 
     get borderColor() {
-        return this.isSelected ? 0x0000FF : 0x000000;
+        return this.isSelected || this.isSelectedByStack ? 0x0000FF : 0x000000;
     }
 
     get textColor() {
@@ -37,7 +40,7 @@ export class Card extends PIXI.Container {
         this.controller.selectedCard.subscribe((card) => {
             if (!card) this.isSelected = false;
             if (card) {
-                this.isSelected = card.cardSuit === this.data.cardSuit && card.cardType === this.data.cardType;
+                this.isSelected = card === this.data;
             }
             this.render();
         });
@@ -45,12 +48,21 @@ export class Card extends PIXI.Container {
 
     private onPointerDown(event: PIXI.FederatedPointerEvent) {
         event.stopPropagation();
+        this.isPointerDown = true;
         this.startDrag(event);
     }
 
     private onPointerUp(event: PIXI.FederatedPointerEvent) {
         event.stopPropagation();
-        this.uiEmitter.emit(EPixiEvent.Click, { element: this });
+        if (this.isPointerDown) {
+            this.uiEmitter.emit(EPixiEvent.Click, { element: this });
+        }
+        this.isPointerDown = false;
+    }
+
+    private onPointerUpOutside(event: PIXI.FederatedPointerEvent) {
+        event.stopPropagation();
+        this.isPointerDown = false;
     }
 
     private startDrag(event: PIXI.FederatedPointerEvent) {

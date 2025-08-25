@@ -1,9 +1,7 @@
 import type { ICard } from "./ICard";
+import type { ISlot } from "./ISlot";
 
-export interface IDeck {
-    readonly id: string;
-    readonly type: 'deck';
-    
+export interface IDeck extends ISlot {
     getCards(): ICard[];
     addCard(card: ICard): void;
     removeCard(card: ICard): boolean;

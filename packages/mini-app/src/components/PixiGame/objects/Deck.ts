@@ -3,6 +3,7 @@ import type { Controller } from "@/core/GameController";
 import type { EventEmitter } from "@/core/lib/EventEmitter";
 import { GameEventType } from "@/core/react/hooks";
 import * as PIXI from "pixi.js";
+import { EGameEvent } from "@/core/lib/events";
 
 export class Deck extends PIXI.Container {
     private background!: PIXI.Graphics;
@@ -27,7 +28,7 @@ export class Deck extends PIXI.Container {
 
     private onPointerDown() {
         console.log('Deck[pointerdown]', this.data);
-        this.eventEmitter.emit(GameEventType.DECK_CLICK, {});
+        this.eventEmitter.emit(EGameEvent.GetCardFromDeck);
     }
 
     render() {

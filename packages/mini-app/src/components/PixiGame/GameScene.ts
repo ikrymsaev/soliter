@@ -59,7 +59,7 @@ export class GameScene extends PIXI.Container {
                     drawnCardsArea,
                     this.game.getDeck(),
                     this.controller,
-                    this.pixiEmitter
+                    this.pixiEmitter,
                 );
                 this.drawnCards.x = 50;
                 this.drawnCards.y = 50;
@@ -82,6 +82,7 @@ export class GameScene extends PIXI.Container {
         this.dragLayer = new DragLayer(
             this.pixiEmitter,
             this.uiController,
+            this.controller,
             this.width,
             this.height
         );

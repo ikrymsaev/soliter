@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import type { UIController } from '../UIController';
 import { DragController } from '../controllers/DragController';
+import type { Controller } from '@/core/GameController';
 
 export class DragLayer extends PIXI.Container {
     private background!: PIXI.Graphics;
@@ -8,6 +9,7 @@ export class DragLayer extends PIXI.Container {
     constructor(
         private readonly pixiEmitter: PIXI.EventEmitter,
         private readonly uiController: UIController,
+        private readonly gameController: Controller,
         width: number,
         height: number
     ) {
@@ -22,7 +24,7 @@ export class DragLayer extends PIXI.Container {
             .roundRect(0, 0, 1000, 1000, 6);
         this.addChild(this.background);
 
-        const controller = new DragController(this, this.pixiEmitter);
+        const controller = new DragController(this, this.pixiEmitter, this.gameController);
         this.uiController.setupDragController(controller);
     }
 }

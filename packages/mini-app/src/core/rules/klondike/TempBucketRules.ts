@@ -16,4 +16,13 @@ export class KlondikeTempBucketRules implements ISlotRules<ITempBucket> {
         // Если слот не пустой, нельзя класть карты
         return false;
     }
+
+    canInteractWithCard(_tempBucket: ITempBucket, _card?: ICard): boolean {
+        return true;
+    }
+
+    canInteractWithStack(_tempBucket: ITempBucket, _card?: ICard): boolean {
+        // Временные слоты не поддерживают взаимодействие со стопкой
+        return false;
+    }
 }

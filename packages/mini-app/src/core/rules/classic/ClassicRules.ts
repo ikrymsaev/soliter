@@ -42,6 +42,14 @@ export class ClassicRules implements IGameRules {
         }
         return card.isVisible()
     }
+
+    canInteractWithStack(sourceSlot: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea, card: ICard): boolean {
+        if (sourceSlot instanceof Column) {
+            return this.columnRules.canInteractWithStack(sourceSlot, card);
+        }
+        // Для других типов слотов взаимодействие со стопкой не поддерживается
+        return false;
+    }
     
     canColumnAcceptCard(column: IColumn, card: ICard): boolean {
         return this.columnRules.canAcceptCard(column, card);

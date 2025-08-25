@@ -1,6 +1,6 @@
 import type { Game } from "./Game";
 import type { EventEmitter } from "./lib/EventEmitter";
-import { EGameEvent, type MoveCardEvent } from "./lib/events";
+import { EGameEvent, type MoveCardEvent, type MoveStackEvent } from "./lib/events";
 import { observable, type IObservable } from "./lib/Observable";
 import { TempSlot } from "./objects/TempSlot";
 import { Column } from "./objects/Column";
@@ -12,156 +12,101 @@ export class Controller {
     public clicks: IObservable<number> = observable(0);
     public selectedCard = observable<ICard | null>(null);
     public selectedSlot = observable<ISlot | null>(null);
+    public selectedStack = observable<ICard[] | null>(null);
 
     constructor(
         private readonly eventEmitter: EventEmitter,
         private readonly game: Game,
     ) {
-        // this.eventEmitter.on(EGameEvent.CARD_CLICK, this.clickCard);
-        // this.eventEmitter.on(EGameEvent.CLICK_OUTSIDE, this.clickOutside);
-        // this.eventEmitter.on(EGameEvent.COLUMN_CLICK, this.clickColumn);
-        // this.eventEmitter.on(EGameEvent.RESULT_SLOT_CLICK, this.clickResultSlot);
-        // this.eventEmitter.on(EGameEvent.TEMP_BUCKET_CLICK, this.clickTempBucket);
-        // this.eventEmitter.on(EGameEvent.DECK_CLICK, this.clickDeck);
-        // this.eventEmitter.on(EGameEvent.DRAG_END, this.dragEnd);
-        // this.eventEmitter.on(EGameEvent.DROP, this.handleDrop);
-        // New Game Actions
         this.eventEmitter.on(EGameEvent.MoveCardToSlot, this.moveCardToSlot);
+        this.eventEmitter.on(EGameEvent.MoveStackToSlot, this.moveStackToSlot);
         this.eventEmitter.on(EGameEvent.SelectCard, this.selectCard);
+        this.eventEmitter.on(EGameEvent.GetCardFromDeck, this.getCardFromDeck);
+    }
+
+    private getCardFromDeck = () => {
+        const deck = this.game.getDeck();
+        const card = deck.drawCard();
+        if (card) {
+            this.drawCardFromDeck();
+        }
     }
 
     private selectCard = (data: { card: ICard, slot: ISlot }) => {
         this.setSelectedCard(data.card, data.slot);
     }
 
+    private moveStackToSlot = ({ cards, target, source }: MoveStackEvent) => {
+        this.clearSelection();
+        if (!(source instanceof Column) || cards.length === 0) return;
+        
+        // Проверяем возможность перемещения стопки
+        if (target instanceof Column) {
+            if (!target.canAcceptStack(cards)) return;
+            
+            // Находим индекс первой карты стопки в исходной колонке
+            const sourceCards = source.getCards();
+            const firstCardIndex = sourceCards.findIndex(c => c === cards[0]);
+            
+            if (firstCardIndex === -1) return;
+            
+            // Перемещаем стопку
+            const movedStack = source.removeStack(firstCardIndex);
+            target.addStack(movedStack);
+            
+            // Открываем новую верхнюю карту если необходимо
+            this.openTopCardIfNeeded(source);
+            this.checkGameCompletion();
+        }
+    }
+
     private moveCardToSlot = ({ card, target, source }: MoveCardEvent) => {
-        this.setSelectedCard(null);
+        console.log("moveCardToSlot", card, target, source);
+        this.clearSelection();
         if (!target.canAcceptCard(card)) return;
+        console.log("add card to slot", target);
         target.addCard(card);
+        console.log("remove card from source", source);
         source.removeCard(card);
+        // Открываем новую верхнюю карту если необходимо
+        if (source instanceof Column) {
+            this.openTopCardIfNeeded(source);
+        }
+        this.checkGameCompletion();
     }
 
     public setSelectedCard = (card: ICard | null, slot?: ISlot) => {
         if (card === this.selectedCard.get()) {
-            this.selectedCard.set(null);
-            this.selectedSlot.set(null);
+            this.clearSelection();
             return;
         }
         this.selectedCard.set(card);
         this.selectedSlot.set(slot || null);
     };
 
-    private clickCard = (data: { card: ICard }) => {
-        this.clicks.set((prev) => prev + 1);
-        const currentSelectedCard = this.selectedCard.get();
-        
-        if (currentSelectedCard && currentSelectedCard !== data.card) {
-            const targetSlot = this.findCardSlot(data.card);
-            if (targetSlot) {
-                const success = this.moveCard(currentSelectedCard, targetSlot);
-                if (success) {
-                    this.setSelectedCard(null);
-                    return;
-                }
-            }
+    public setSelectedStack = (cards: ICard[] | null, slot?: ISlot) => {
+        if (cards === this.selectedStack.get()) {
+            this.clearSelection();
+            return;
         }
-        this.selectedCard.set(data.card);
-    }
+        this.selectedStack.set(cards);
+        this.selectedSlot.set(slot || null);
+    };
 
-    private clickOutside = () => {
-        this.clicks.set((prev) => prev + 1);
+    public clearSelection = () => {
         this.selectedCard.set(null);
-    }
+        this.selectedSlot.set(null);
+    };
 
-    // Обработчики кликов по разным типам слотов
-    private clickColumn = (data: { slot: IColumn }) => {
-        this.clicks.set((prev) => prev + 1);
-        const selectedCard = this.selectedCard.get();
-        if (!selectedCard) {
-            return;
-        }
-        this.moveCard(selectedCard, data.slot);
-        this.setSelectedCard(null);
-    }
-
-    private clickResultSlot = (data: { slot: IResultSlot }) => {
-        this.clicks.set((prev) => prev + 1);
-        const selectedCard = this.selectedCard.get();
-        if (!selectedCard) {
-            return;
-        }
-        this.moveCard(selectedCard, data.slot);
-        this.setSelectedCard(null);
-    }
-
-    private clickTempBucket = (data: { slot: ITempBucket | ITempSlot }) => {
-        this.clicks.set((prev) => prev + 1);
-        const selectedCard = this.selectedCard.get();
-        
-        if (!selectedCard) {
-            return;
-        }
-        this.moveCard(selectedCard, data.slot);
-        this.setSelectedCard(null);
-    }
-
-    private clickDeck = () => {
-        const selectedCard = this.selectedCard.get();
-        
-        if (selectedCard) {
-            // Проверяем правила игры для возврата карты в колоду
-            const rules = this.game.getRules();
-            if (rules.canReturnCardToDeck()) {
-                // Возвращаем карту в колоду
-                if (this.returnCardToDeck(selectedCard)) {
-                    this.setSelectedCard(null);
-                }
-            } else {
-                // Просто снимаем выделение с карты
-                this.setSelectedCard(null);
-            }
-        } else {
-            // Если карта не выбрана, вытягиваем карту из колоды
-            const card = this.drawCardFromDeck();
-            
-            // Если карта не вытянута (колода пуста), но есть вытянутые карты, перезапускаем колоду
-            if (!card) {
-                this.restartDeck();
+    private openTopCardIfNeeded = (column: Column) => {
+        const remainingCards = column.getCards();
+        if (remainingCards.length > 0) {
+            const newTopCard = remainingCards[remainingCards.length - 1];
+            if (!newTopCard.isVisible()) {
+                newTopCard.setVisible(true);
             }
         }
-    }
-
-    private dragEnd = (data: { card: ICard, sourceSlot?: any, targetSlot?: any }) => {
-        console.log('Controller[drag:end]', data);
-        
-        // При завершении перетаскивания снимаем выделение с карты
-        this.setSelectedCard(null);
-        
-        // Если перетаскивание было отменено (нет целевого слота), карта уже восстановлена в DragLayer
-        if (!data.targetSlot) {
-            console.log('Controller: Drag cancelled, card restored to original position');
-        }
-    }
-
-    private handleDrop = (data: { card: ICard, sourceSlot: any, targetSlot: any }) => {
-        console.log('Controller[drop]', data);
-        
-        // Пытаемся переместить карту в целевой слот
-        const success = this.moveCard(data.card, data.targetSlot);
-        
-        if (success) {
-            // Если перемещение успешно, снимаем выделение с карты
-            this.setSelectedCard(null);
-        } else {
-            // Если перемещение не удалось, уведомляем DragLayer о необходимости восстановить карту
-            console.log('Controller: Move failed, notifying DragLayer to restore card');
-            this.eventEmitter.emit(EGameEvent.DRAG_END, {
-                card: data.card,
-                sourceSlot: data.sourceSlot,
-                targetSlot: null
-            });
-        }
-    }
+    };
 
     // Метод для возврата карты в колоду
     public returnCardToDeck = (card: ICard): boolean => {

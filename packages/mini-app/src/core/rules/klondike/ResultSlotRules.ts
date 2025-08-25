@@ -19,6 +19,24 @@ export class ResultSlotRules implements ISlotRules<IResultSlot> {
         return sameSuit && validSequence;
     }
 
+    canInteractWithCard(resultSlot: IResultSlot, card?: ICard): boolean {
+        if (!card) return false;
+        
+        const cards = resultSlot.getCards().get();
+        
+        // Если слот пустой, нельзя взаимодействовать
+        if (cards.length === 0) return false;
+        
+        // Можно взаимодействовать только с самой последней картой
+        const topCard = cards[cards.length - 1];
+        return topCard === card;
+    }
+
+    canInteractWithStack(_resultSlot: IResultSlot, _card?: ICard): boolean {
+        // Результатные слоты не поддерживают взаимодействие со стопкой
+        return false;
+    }
+
     private getCardValue(card: ICard): number {
         const cardType = card.cardType;
         switch (cardType) {

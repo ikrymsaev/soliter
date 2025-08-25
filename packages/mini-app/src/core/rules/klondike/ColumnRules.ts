@@ -21,6 +21,45 @@ export class ColumnRules implements ISlotRules<IColumn> {
         return differentColor && validSequence;
     }
 
+    canInteractWithCard(column: IColumn, card?: ICard): boolean {
+        if (!card) return false;
+        const cards = column.getCards();
+        const cardIndex = cards.findIndex(c => c === card);
+        return cardIndex === cards.length - 1;
+    }
+
+    canInteractWithStack(column: IColumn, card: ICard): boolean {
+        if (!card) return false;
+        
+        const cards = column.getCards();
+        const cardIndex = cards.findIndex(c => c === card);
+        
+        // Если карта не найдена в колонке
+        if (cardIndex === -1) return false;
+        
+        // Если это последняя карта - можно взаимодействовать
+        if (cardIndex === cards.length - 1) return true;
+        
+        // Проверяем, что все карты ниже образуют правильную последовательность
+        for (let i = cardIndex; i < cards.length - 1; i++) {
+            const currentCard = cards[i];
+            const nextCard = cards[i + 1];
+            
+            const currentCardInfo = currentCard.getCardSuitInfo();
+            const nextCardInfo = nextCard.getCardSuitInfo();
+            
+            // Проверяем, что цвета разные и карты идут по убыванию
+            const differentColor = currentCardInfo.color !== nextCardInfo.color;
+            const validSequence = this.getCardValue(currentCard) === this.getCardValue(nextCard) + 1;
+            
+            if (!differentColor || !validSequence) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     private getCardValue(card: ICard): number {
         const cardType = card.cardType;
         switch (cardType) {

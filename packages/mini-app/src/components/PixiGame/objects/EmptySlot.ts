@@ -1,6 +1,6 @@
 import type { Controller } from "@/core/GameController";
 import type { EventEmitter } from "@/core/lib/EventEmitter";
-import { GameEventType } from "@/core/react/hooks";
+import { EPixiEvent } from "../events";
 import * as PIXI from "pixi.js";
 
 export class EmptySlot extends PIXI.Container {
@@ -14,18 +14,20 @@ export class EmptySlot extends PIXI.Container {
     cursor: PIXI.Cursor = 'pointer';
 
     constructor(
-        private readonly targetSlot: any, // IColumn | IResultSlot | ITempSlot
+        readonly data: any, // IColumn | IResultSlot | ITempSlot
         private readonly controller: Controller,
-        private readonly eventEmitter: EventEmitter
+        private readonly eventEmitter: EventEmitter,
+        private readonly pixiEmitter?: PIXI.EventEmitter
     ) {
         super();
-        this.on('pointerdown', this.onPointerDown);
+        this.on('pointerup', this.onPointerUp);
         this.render();
     }
 
-    private onPointerDown() {
-        console.log('EmptySlot[pointerdown]', this.targetSlot);
-        this.eventEmitter.emit(GameEventType.COLUMN_CLICK, { slot: this.targetSlot });
+    private onPointerUp() {
+        if (this.pixiEmitter) {
+            this.pixiEmitter.emit(EPixiEvent.Click, { element: this });
+        }
     }
 
     render() {

@@ -1,4 +1,4 @@
-import { Card, Column, Deck, DrawnCards, ResultSlot, TempSlot } from "./objects";
+import { Card, Column, Deck, DrawnCards, ResultSlot, TempSlot, EmptySlot, CardStack } from "./objects";
 import * as PIXI from "pixi.js"
 
 
@@ -8,6 +8,8 @@ export const isTempSlot = (el: PIXI.Container) => el instanceof TempSlot;
 export const isResultSlot = (el: PIXI.Container) => el instanceof ResultSlot;
 export const isDeck = (el: PIXI.Container) => el instanceof Deck;
 export const isDrawnSlot = (el: PIXI.Container) => el instanceof DrawnCards;
+export const isEmptySlot = (el: PIXI.Container) => el instanceof EmptySlot;
+export const isCardStack = (el: PIXI.Container) => el instanceof CardStack;
 
 
 export const findTargetSlot = (gameScene: PIXI.Container, point: PIXI.Point): Column | TempSlot | ResultSlot | null => {

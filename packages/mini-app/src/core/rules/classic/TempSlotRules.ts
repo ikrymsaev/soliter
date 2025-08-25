@@ -10,4 +10,9 @@ export class TempSlotRules implements ISlotRules<ITempSlot> {
     canInteractWithCard(_tempSlot: ITempSlot, _card?: unknown): boolean {
         return true;
     }
+
+    canInteractWithStack(_tempSlot: ITempSlot, _card?: unknown): boolean {
+        // Временные слоты не поддерживают взаимодействие со стопкой
+        return false;
+    }
 }

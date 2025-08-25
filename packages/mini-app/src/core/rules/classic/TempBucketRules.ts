@@ -10,4 +10,9 @@ export class TempBucketRules implements ISlotRules<ITempBucket> {
     canInteractWithCard(_tempBucket: ITempBucket, _card?: unknown): boolean {
         return true;
     }
+
+    canInteractWithStack(_tempBucket: ITempBucket, _card?: unknown): boolean {
+        // Временные слоты не поддерживают взаимодействие со стопкой
+        return false;
+    }
 }

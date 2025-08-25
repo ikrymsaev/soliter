@@ -4,13 +4,15 @@ import { observable, type IObservable } from "../lib/Observable";
 
 export class DrawnCardsArea implements IDrawnCardsArea {
     private cards: ICard[] = [];
-    public readonly id: string;
     public readonly type: 'drawn-cards' = 'drawn-cards';
     public readonly cardsObservable: IObservable<ICard[]>;
 
     constructor() {
-        this.id = `drawn-cards-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         this.cardsObservable = observable<ICard[]>([]);
+    }
+
+    canAcceptCard(_: ICard): boolean {
+        return false;
     }
 
     public getCards(): ICard[] {

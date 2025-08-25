@@ -17,6 +17,7 @@ export class KlondikeRules implements IGameRules {
     readonly columnRules: ISlotRules<IColumn>;
     readonly resultSlotRules: ISlotRules<IResultSlot>;
     readonly tempBucketRules: ISlotRules<ITempBucket>;
+    readonly tempSlotRules: ISlotRules<ITempSlot>;
     readonly columnCount: number = 7;
     readonly dealStrategy: KlondikeDealStrategy;
 
@@ -24,7 +25,30 @@ export class KlondikeRules implements IGameRules {
         this.columnRules = new ColumnRules();
         this.resultSlotRules = new ResultSlotRules();
         this.tempBucketRules = new KlondikeTempBucketRules();
+        // TODO: Создать TempSlotRules для Klondike если нужно
+        this.tempSlotRules = {} as ISlotRules<ITempSlot>;
         this.dealStrategy = new KlondikeDealStrategy();
+    }
+
+    canInteractWithCard(card: ICard, sourceSlot: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea): boolean {
+        if (sourceSlot instanceof Column) {
+            return this.columnRules.canInteractWithCard(sourceSlot, card);
+        }
+        if (sourceSlot instanceof TempSlot) {
+            return this.tempSlotRules.canInteractWithCard(sourceSlot, card);
+        }
+        if (sourceSlot instanceof ResultSlot) {
+            return this.resultSlotRules.canInteractWithCard(sourceSlot, card);
+        }
+        return card.isVisible()
+    }
+
+    canInteractWithStack(sourceSlot: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea, card: ICard): boolean {
+        if (sourceSlot instanceof Column) {
+            return this.columnRules.canInteractWithStack(sourceSlot, card);
+        }
+        // Для других типов слотов взаимодействие со стопкой не поддерживается
+        return false;
     }
 
     canColumnAcceptCard(column: IColumn, card: ICard): boolean {

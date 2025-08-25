@@ -62,7 +62,8 @@ export class Column extends PIXI.Container {
         this.emptySlot = new EmptySlot(
             this.data,
             this.controller,
-            this.eventEmitter
+            this.eventEmitter,
+            this.pixiEmitter
         );
         this.addChild(this.emptySlot);
     }

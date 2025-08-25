@@ -1,10 +1,8 @@
 import type { ICard } from "./ICard";
 import type { IObservable } from "../lib/Observable";
+import type { ISlot } from "./ISlot";
 
-export interface IDrawnCardsArea {
-    readonly id: string;
-    readonly type: 'drawn-cards';
-    
+export interface IDrawnCardsArea extends ISlot {
     getCards(): ICard[];
     getCardsObservable(): IObservable<ICard[]>;
     addCard(card: ICard): void;

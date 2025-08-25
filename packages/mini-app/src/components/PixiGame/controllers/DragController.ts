@@ -2,6 +2,7 @@ import { EPixiEvent } from "../events";
 import type { DragLayer } from "../layers/DragLayer";
 import * as PIXI from "pixi.js"
 import { findTargetSlot } from "../utils";
+import { CardStack } from "../objects/CardStack";
 
 type DragStartEvent = {
     element: PIXI.Container;
@@ -13,6 +14,7 @@ export class DragController {
     private readonly DRAG_THRESHOLD = 5;
     
     private draggedEl: PIXI.Container | null = null;
+    private draggedStack: CardStack | null = null;
     private source: PIXI.Container | null = null;
 
     private dragOffset = DEFAULT_POSITION;
@@ -24,11 +26,11 @@ export class DragController {
 
     constructor(
         private readonly dragLayer: DragLayer,
-        private readonly pixiEmitter: PIXI.EventEmitter 
+        private readonly pixiEmitter: PIXI.EventEmitter,
+        private readonly gameController?: any
     ) {}
     
     startDrag = (data: DragStartEvent) => {
-        console.log("startDrag")
         if (this.isDragging) return;
 
         const { element, event } = data;
@@ -52,6 +54,7 @@ export class DragController {
     getDragInfo() {
         return {
             draggedEl: this.draggedEl,
+            draggedStack: this.draggedStack,
             source: this.source,
             originalPosition: this.originalPosition,
             isDragging: this.isDragging
@@ -65,15 +68,31 @@ export class DragController {
                 this.dragLayer.removeChild(this.draggedEl);
             }
             
-            // Возвращаем элемент в исходный контейнер
+            // Если была стопка, восстанавливаем видимость всех карт и удаляем CardStack
+            if (this.draggedStack && this.draggedStack.parent === this.dragLayer) {
+                // Восстанавливаем видимость всех карт стопки
+                if (this.gameController) {
+                    const selectedStack = this.gameController.selectedStack.get();
+                    if (selectedStack) {
+                        this.showStackCards(selectedStack);
+                    }
+                }
+                
+                this.dragLayer.removeChild(this.draggedStack);
+                this.draggedStack.destroy();
+            }
+            
+            // Всегда возвращаем оригинальную карту в исходный контейнер
             this.source.addChild(this.draggedEl);
             this.draggedEl.x = this.originalPosition.x;
             this.draggedEl.y = this.originalPosition.y;
+            this.draggedEl.visible = true; // Восстанавливаем видимость
             
             // Сбрасываем состояние перетаскивания
             this.isDragging = false;
             this.isDragStarted = false;
             this.draggedEl = null;
+            this.draggedStack = null;
             this.source = null;
             this.originalPosition = DEFAULT_POSITION;
             this.dragOffset = DEFAULT_POSITION;
@@ -95,6 +114,12 @@ export class DragController {
             this.dragLayer.removeChild(this.draggedEl);
         }
 
+        // Удаляем стопку карт из dragLayer (карты уже перемещены игровой логикой)
+        if (this.draggedStack && this.draggedStack.parent === this.dragLayer) {
+            this.dragLayer.removeChild(this.draggedStack);
+            this.draggedStack.destroy();
+        }
+
         // Отключаем интерактивность DragLayer
         this.dragLayer.eventMode = 'none';
         
@@ -102,6 +127,7 @@ export class DragController {
         this.isDragging = false;
         this.isDragStarted = false;
         this.draggedEl = null;
+        this.draggedStack = null;
         this.source = null;
         this.originalPosition = DEFAULT_POSITION;
         this.dragOffset = DEFAULT_POSITION;
@@ -117,6 +143,12 @@ export class DragController {
             this.dragLayer.removeChild(this.draggedEl);
         }
 
+        // Удаляем стопку карт из dragLayer (карты уже перемещены игровой логикой)
+        if (this.draggedStack && this.draggedStack.parent === this.dragLayer) {
+            this.dragLayer.removeChild(this.draggedStack);
+            this.draggedStack.destroy();
+        }
+
         // Отключаем интерактивность DragLayer
         this.dragLayer.eventMode = 'none';
         
@@ -124,15 +156,27 @@ export class DragController {
         this.isDragging = false;
         this.isDragStarted = false;
         this.draggedEl = null;
+        this.draggedStack = null;
         this.source = null;
         this.originalPosition = DEFAULT_POSITION;
         this.dragOffset = DEFAULT_POSITION;
     }
 
     private updateDragPosition(globalX: number, globalY: number) {
-        if (!this.draggedEl) return;
-        this.draggedEl.x = globalX - this.dragOffset.x;
-        this.draggedEl.y = globalY - this.dragOffset.y;
+        const newX = globalX - this.dragOffset.x;
+        const newY = globalY - this.dragOffset.y;
+        
+        // Если есть стопка, перемещаем её
+        if (this.draggedStack) {
+            this.draggedStack.x = newX;
+            this.draggedStack.y = newY;
+        }
+        
+        // Если есть одиночная карта, перемещаем её
+        if (this.draggedEl) {
+            this.draggedEl.x = newX;
+            this.draggedEl.y = newY;
+        }
     }
 
     private addGlobalEventListeners() {
@@ -198,8 +242,26 @@ export class DragController {
             this.dragOffset = { x: 30, y: 45 }; // Центрируем карту под курсором
         }
 
-        this.dragLayer.addChild(this.draggedEl)
-        // Позиционируем перетаскиваемую карту
+        // Проверяем, есть ли выбранная стопка
+        if (this.gameController) {
+            const selectedStack = this.gameController.selectedStack.get();
+            if (selectedStack && selectedStack.length > 1) {
+                // Создаем CardStack для визуализации стопки
+                this.draggedStack = new CardStack(selectedStack, this.gameController, this.pixiEmitter);
+                this.dragLayer.addChild(this.draggedStack);
+                
+                // Скрываем все карты стопки в исходной колонке
+                this.hideStackCards(selectedStack);
+            } else {
+                // Обычное перетаскивание одной карты
+                this.dragLayer.addChild(this.draggedEl);
+            }
+        } else {
+            // Обычное перетаскивание одной карты
+            this.dragLayer.addChild(this.draggedEl);
+        }
+        
+        // Позиционируем перетаскиваемый элемент
         this.updateDragPosition(pixiX, pixiY);
         // Включаем интерактивность DragLayer для перехвата событий мыши
         this.dragLayer.eventMode = 'static';
@@ -232,6 +294,34 @@ export class DragController {
         this.cancelDragPreparation();
     };
 
+    private hideStackCards(selectedStack: any[]) {
+        if (!this.source) return;
+        
+        // Находим все визуальные карты в источнике, которые соответствуют стопке
+        selectedStack.forEach((cardData: any) => {
+            const pixiCard = this.source!.children.find((child: any) => 
+                child.data === cardData
+            );
+            if (pixiCard) {
+                pixiCard.visible = false;
+            }
+        });
+    }
+
+    private showStackCards(selectedStack: any[]) {
+        if (!this.source) return;
+        
+        // Восстанавливаем видимость всех карт стопки
+        selectedStack.forEach((cardData: any) => {
+            const pixiCard = this.source!.children.find((child: any) => 
+                child.data === cardData
+            );
+            if (pixiCard) {
+                pixiCard.visible = true;
+            }
+        });
+    }
+
     private cancelDragPreparation() {
         // Удаляем глобальные обработчики событий
         this.removeGlobalEventListeners();
@@ -240,6 +330,7 @@ export class DragController {
         this.isDragStarted = false;
         this.isDragging = false;
         this.draggedEl = null;
+        this.draggedStack = null;
         this.source = null;
         this.originalPosition = DEFAULT_POSITION;
         this.dragOffset = DEFAULT_POSITION;
