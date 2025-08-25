@@ -7,6 +7,8 @@ export enum EPixiEvent {
     DragDrop = "card:drag.drop",
     Cancel = "card:drag.cancel",
     Click = "card:click",
+    AnimateMove = "card:animate.move",
+    AnimationComplete = "card:animation.complete",
 }
 
 export type TDragStartEvent = {
@@ -27,4 +29,15 @@ export type TDragCancelEvent = {
 
 export type TElementClickEvent = {
     element: PIXI.Container
+}
+
+export type TAnimateMoveEvent = {
+    card: any; // ICard
+    fromPosition: PIXI.Point
+    toPosition: PIXI.Point
+    onComplete?: () => void
+}
+
+export type TAnimationCompleteEvent = {
+    card: any; // ICard
 }

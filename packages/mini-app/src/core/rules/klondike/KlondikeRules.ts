@@ -59,8 +59,8 @@ export class KlondikeRules implements IGameRules {
         return this.resultSlotRules.canAcceptCard(resultSlot, card);
     }
     
-    canTempSlotAcceptCard(tempSlot: ITempBucket): boolean {
-        return this.tempBucketRules.canAcceptCard(tempSlot);
+    canTempSlotAcceptCard(tempSlot: ITempSlot): boolean {
+        return this.tempSlotRules.canAcceptCard(tempSlot);
     }
     
     canMoveCard(

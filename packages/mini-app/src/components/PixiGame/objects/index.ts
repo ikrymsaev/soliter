@@ -1,7 +1,6 @@
 export { Card } from "./Card";
 export { CardStack } from "./CardStack";
 export { Column } from "./Column";
-export { Deck } from "./Deck";
 export { DrawnCards } from "./DrawnCards";
 export { EmptySlot } from "./EmptySlot";
 export { FieldBucket } from "./FieldBucket";

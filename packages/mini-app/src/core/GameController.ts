@@ -25,11 +25,7 @@ export class Controller {
     }
 
     private getCardFromDeck = () => {
-        const deck = this.game.getDeck();
-        const card = deck.drawCard();
-        if (card) {
-            this.drawCardFromDeck();
-        }
+        this.drawCardFromDeck();
     }
 
     private selectCard = (data: { card: ICard, slot: ISlot }) => {
@@ -326,12 +322,10 @@ export class Controller {
     // Методы для работы с колодой
     public drawCardFromDeck = (): ICard | null => {
         const deck = this.game.getDeck();
-        const rules = this.game.getRules();
         const drawnCardsArea = this.game.getDrawnCardsArea();
-        
-        // Проверяем правила игры
-        if (!rules.canDrawFromDeck(deck as any)) {
-            return null;
+
+        if (deck.isEmpty()) {
+            this.restartDeck();
         }
         
         const card = deck.drawCard();

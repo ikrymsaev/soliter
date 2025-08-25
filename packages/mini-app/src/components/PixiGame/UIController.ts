@@ -1,15 +1,17 @@
 import type { Game } from "@/core/Game";
 import type { EventEmitter } from "@/core/lib/EventEmitter";
 import * as PIXI from "pixi.js"
-import { EPixiEvent, type TDragDropEvent, type TDragStartEvent, type TDragCancelEvent, type TElementClickEvent } from "./events";
-import { Card, ResultSlot, TempSlot, EmptySlot, DrawnCards, Deck } from "./objects";
+import { EPixiEvent, type TDragDropEvent, type TDragStartEvent, type TDragCancelEvent, type TElementClickEvent, type TAnimateMoveEvent } from "./events";
+import { Card, ResultSlot, TempSlot, EmptySlot, DrawnCards } from "./objects";
 import type { DragController } from "./controllers/DragController";
-import { findTargetSlot, isCard, isColumn, isResultSlot, isTempSlot, isEmptySlot, isDrawnSlot, isDeck } from "./utils";
+import type { AnimationController } from "./controllers/AnimationController";
+import { findTargetSlot, isCard, isColumn, isResultSlot, isTempSlot, isEmptySlot, isDrawnSlot, isDeck, findCardElement, findSlotElement } from "./utils";
 import { EGameEvent } from "@/core/lib/events";
 import type { Controller } from "@/core/GameController";
 
 export class UIController {
     dragController!: DragController
+    animationController!: AnimationController
 
     constructor(
         private readonly game: Game,
@@ -25,6 +27,11 @@ export class UIController {
         this.pixiEmitter.on(EPixiEvent.DragDrop, this.onCardDragDrop)
         this.pixiEmitter.on(EPixiEvent.Cancel, this.onCardDragCancel)
         this.pixiEmitter.on(EPixiEvent.Click, this.onClickElement)
+    }
+
+    setupAnimationController(controller: AnimationController) {
+        this.animationController = controller;
+        this.pixiEmitter.on(EPixiEvent.AnimateMove, this.onAnimateMove)
     }
 
     private onClickElement = ({ element }: TElementClickEvent) => {
@@ -44,7 +51,7 @@ export class UIController {
         this.gameEmitter.emit(EGameEvent.GetCardFromDeck);
     }
 
-    private onDeckClick = ({ data }: Deck) => {
+    private onDeckClick = ({ data }: any) => {
         console.log("onDeckClick", data);
         if (!data) return;
     }
@@ -61,11 +68,7 @@ export class UIController {
         }
         
         if (selectedCard) {
-            this.gameEmitter.emit(EGameEvent.MoveCardToSlot, {
-                card: selectedCard,
-                source: this.gameController.selectedSlot.get(),
-                target: data,
-            });
+            this.animateCardMoveToSlot(selectedCard, this.gameController.selectedSlot.get(), data);
         }
     }
 
@@ -81,11 +84,7 @@ export class UIController {
         }
         
         if (selectedCard) {
-            this.gameEmitter.emit(EGameEvent.MoveCardToSlot, {
-                card: selectedCard,
-                source: this.gameController.selectedSlot.get(),
-                target: data,
-            });
+            this.animateCardMoveToSlot(selectedCard, this.gameController.selectedSlot.get(), data);
         }
     }
 
@@ -94,11 +93,7 @@ export class UIController {
 
         const selectedCard = this.gameController.selectedCard.get();
         if (selectedCard) {
-            this.gameEmitter.emit(EGameEvent.MoveCardToSlot, {
-                card: selectedCard,
-                source: this.gameController.selectedSlot.get(),
-                target: data,
-            });
+            this.animateCardMoveToSlot(selectedCard, this.gameController.selectedSlot.get(), data);
         }
     }
 
@@ -113,11 +108,7 @@ export class UIController {
 
         // Если выбрана одна карта, перемещаем её
         if (selectedCard) {
-            return this.gameEmitter.emit(EGameEvent.MoveCardToSlot, {
-                card: selectedCard,
-                source: this.gameController.selectedSlot.get(),
-                target: parent.data,
-            });
+            return this.animateCardMoveToSlot(selectedCard, this.gameController.selectedSlot.get(), parent.data);
         }
 
         const canInteract = rules.canInteractWithCard(data, parent.data);
@@ -213,11 +204,7 @@ export class UIController {
 
         if (isRulesAcceptMove()) {
             this.completeSuccessfulDrag();
-            this.gameEmitter.emit(EGameEvent.MoveCardToSlot, {
-                card: element.data,
-                target: target.data,
-                source: source.data,
-            });
+            this.animateCardMoveToSlot(element.data, source.data, target.data);
         } else {
             this.restoreCardToOriginalPosition();
         }
@@ -235,11 +222,7 @@ export class UIController {
         // Проверяем, может ли колонка принять стопку (проверяем первую карту)
         if (rules.canColumnAcceptCard(target.data, firstCard)) {
             this.completeSuccessfulDrag();
-            this.gameEmitter.emit(EGameEvent.MoveStackToSlot, {
-                cards: selectedStack,
-                target: target.data,
-                source: (source as any).data,
-            });
+            this.animateStackMoveToSlot(selectedStack, (source as any).data, target.data);
         } else {
             this.restoreStackToOriginalPosition();
         }
@@ -255,5 +238,109 @@ export class UIController {
 
     private completeSuccessfulDrag() {
         this.dragController.completeDrag();
+    }
+
+    private onAnimateMove = ({ card, fromPosition, toPosition, onComplete }: TAnimateMoveEvent) => {
+        this.animationController.animateCardMove({
+            card,
+            fromPosition,
+            toPosition,
+            onComplete,
+            config: {
+                duration: 400,
+                easing: 'easeOut'
+            }
+        });
+    }
+
+    // Метод для получения глобальной позиции элемента
+    private getGlobalPosition(element: PIXI.Container): PIXI.Point {
+        return element.toGlobal(new PIXI.Point(0, 0));
+    }
+
+    // Метод для запуска анимированного перемещения карты
+    public animateCardMove(card: any, fromElement: PIXI.Container, toElement: PIXI.Container, onComplete?: () => void) {
+        const fromPosition = this.getGlobalPosition(fromElement);
+        const toPosition = this.getGlobalPosition(toElement);
+        
+        this.pixiEmitter.emit(EPixiEvent.AnimateMove, {
+            card,
+            fromPosition,
+            toPosition,
+            onComplete
+        });
+    }
+
+    // Метод для анимированного перемещения карты между слотами
+    private animateCardMoveToSlot(card: any, sourceSlot: any, targetSlot: any) {
+        // Находим визуальные элементы карты и слотов
+        const gameScene = this.appStage.children[0] as PIXI.Container;
+        const cardElement = findCardElement(gameScene, card);
+        const targetElement = findSlotElement(gameScene, targetSlot);
+        
+        if (!cardElement || !targetElement) {
+            // Если не можем найти элементы, выполняем мгновенное перемещение
+            this.gameEmitter.emit(EGameEvent.MoveCardToSlot, {
+                card,
+                source: sourceSlot,
+                target: targetSlot,
+            });
+            return;
+        }
+
+        // Получаем позиции для анимации
+        const fromPosition = this.getGlobalPosition(cardElement);
+        const toPosition = this.calculateFinalCardPosition(targetElement, targetSlot);
+        
+        // Скрываем оригинальную карту
+        cardElement.visible = false;
+        
+        // Запускаем анимацию
+        this.pixiEmitter.emit(EPixiEvent.AnimateMove, {
+            card,
+            fromPosition,
+            toPosition,
+            onComplete: () => {
+                // После анимации выполняем логическое перемещение
+                this.gameEmitter.emit(EGameEvent.MoveCardToSlot, {
+                    card,
+                    source: sourceSlot,
+                    target: targetSlot,
+                });
+                // Восстанавливаем видимость карты (она будет в новой позиции)
+                cardElement.visible = true;
+            }
+        });
+    }
+
+    // Метод для вычисления финальной позиции карты в целевом слоте
+    private calculateFinalCardPosition(targetElement: PIXI.Container, targetSlot: any): PIXI.Point {
+        const basePosition = this.getGlobalPosition(targetElement);
+        
+        // Для колонок вычисляем позицию с учетом уже существующих карт
+        if (isColumn(targetElement)) {
+            const currentCards = targetSlot.getCards();
+            const cardOverlap = 25; // Из Column.ts
+            
+            // Позиция новой карты будет на currentCards.length * cardOverlap ниже базовой позиции
+            return new PIXI.Point(
+                basePosition.x,
+                basePosition.y + (currentCards.length * cardOverlap)
+            );
+        }
+        
+        // Для других типов слотов (ResultSlot, TempSlot, EmptySlot) карта размещается в базовой позиции
+        return basePosition;
+    }
+
+    // Метод для анимированного перемещения стопки карт
+    private animateStackMoveToSlot(cards: any[], sourceSlot: any, targetSlot: any) {
+        // Для стопки пока делаем мгновенное перемещение
+        // TODO: Реализовать анимацию стопки карт
+        this.gameEmitter.emit(EGameEvent.MoveStackToSlot, {
+            cards,
+            source: sourceSlot,
+            target: targetSlot,
+        });
     }
 }

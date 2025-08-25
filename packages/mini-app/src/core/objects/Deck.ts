@@ -3,11 +3,8 @@ import type { IDeck, ICard } from "../interfaces";
 
 export class Deck implements IDeck {
     private cards: ICard[] = [];
-    public readonly id: string;
-    public readonly type: 'deck' = 'deck';
 
     constructor() {
-        this.id = `deck-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         for (const cardSuit of CARD_SUITS) {
             for (const cardType of CARD_TYPES) {
                 this.cards.push(new Card(cardType.type, cardSuit.suit));

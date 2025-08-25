@@ -5,6 +5,7 @@ import { TempBucket } from "./objects/TempBucket";
 import { ResultBucket } from "./objects/ResultBucket";
 import { DrawnCards } from "./objects/DrawnCards";
 import { DragLayer } from "./layers/DragLayer";
+import { AnimationLayer } from "./layers/AnimationLayer";
 import type { Controller } from "@/core/GameController";
 import type { EventEmitter } from "@/core/lib/EventEmitter";
 import { ESolitaireRules } from "@/core/rules/GameRulesFactory";
@@ -16,6 +17,7 @@ export class GameScene extends PIXI.Container {
     private resultBucket!: ResultBucket;
     private drawnCards!: DrawnCards;
     private dragLayer!: DragLayer;
+    private animationLayer!: AnimationLayer;
 
     constructor(
         private readonly game: Game,
@@ -77,6 +79,16 @@ export class GameScene extends PIXI.Container {
         this.fieldBucket.x = 50;
         this.fieldBucket.y = 180;
         this.addChild(this.fieldBucket);
+
+        // Создаем слой для анимаций ПОСЛЕ всех игровых элементов
+        this.animationLayer = new AnimationLayer(
+            this.pixiEmitter,
+            this.uiController,
+            this.controller,
+            this.width,
+            this.height
+        );
+        this.addChild(this.animationLayer);
 
         // Создаем слой для перетаскивания ПОСЛЕ всех остальных элементов (должен быть поверх всех элементов)
         this.dragLayer = new DragLayer(
