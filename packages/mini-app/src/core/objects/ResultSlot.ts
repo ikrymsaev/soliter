@@ -19,6 +19,7 @@ export class ResultSlot implements IResultSlot {
     }
 
     public addCard(card: ICard): void {
+        if (!this.canAcceptCard(card)) return;
         this.cards.set((prev) => [...prev, card]);
     }
     

@@ -6,4 +6,8 @@ export class TempSlotRules implements ISlotRules<ITempSlot> {
         // Временный слот может принять карту только если он пустой
         return tempSlot.isEmpty();
     }
+
+    canInteractWithCard(_tempSlot: ITempSlot, _card?: unknown): boolean {
+        return true;
+    }
 }

@@ -1,5 +1,5 @@
 import { createContext, useMemo } from "react";
-import { Controller } from "../../Controller";
+import { Controller } from "../../GameController";
 import { useEventEmitter } from "../hooks/useEventEmitter";
 import type { Game } from "../../Game";
 

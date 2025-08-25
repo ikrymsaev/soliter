@@ -6,4 +6,8 @@ export class TempBucketRules implements ISlotRules<ITempBucket> {
         // Временный слот может принять карту, если есть свободное место
         return tempBucket.getAvailableSlots() > 0;
     }
+
+    canInteractWithCard(_tempBucket: ITempBucket, _card?: unknown): boolean {
+        return true;
+    }
 }

@@ -1,3 +1,5 @@
+import type { ICard, ISlot } from "../interfaces";
+
 // Enum'ы для типов событий
 export enum EGameEvent {
     CARD_CLICK = 'card:click',
@@ -7,14 +9,16 @@ export enum EGameEvent {
     RESULT_SLOT_CLICK = 'result:slot:click',
     TEMP_BUCKET_CLICK = 'temp:bucket:click',
     DECK_CLICK = 'deck:click',
-    GAME_STATE_CHANGED = 'game:state:changed',
     DRAG_START = 'drag:start',
     DRAG_END = 'drag:end',
     DRAG_OVER = 'drag:over',
     DROP = 'drop',
     DROP_TO_TEMP_BUCKET = 'drop:to:temp:bucket',
     DROP_TO_RESULT_BUCKET = 'drop:to:result:bucket',
-    DROP_TO_COLUMN = 'drop:to:column'
+    DROP_TO_COLUMN = 'drop:to:column',
+    // New Game Actions
+    MoveCardToSlot = 'move:card:to:slot',
+    SelectCard = 'select:card',
 }
 
 // Enum'ы для действий
@@ -89,6 +93,12 @@ export interface DropEvent {
     event: DragEvent;
 }
 
+export interface MoveCardEvent<Target = ISlot, Source = ISlot> {
+    card: ICard;
+    target: Target;
+    source: Source;
+}
+
 // Union тип для всех событий
 export type GameEvent = 
     | { type: EGameEvent.CARD_CLICK; data: CardClickEvent }
@@ -98,11 +108,11 @@ export type GameEvent =
     | { type: EGameEvent.RESULT_SLOT_CLICK; data: ResultSlotClickEvent }
     | { type: EGameEvent.TEMP_BUCKET_CLICK; data: TempBucketClickEvent }
     | { type: EGameEvent.DECK_CLICK; data: DeckClickEvent }
-    | { type: EGameEvent.GAME_STATE_CHANGED; data: GameStateChangedEvent }
     | { type: EGameEvent.DRAG_START; data: DragStartEvent }
     | { type: EGameEvent.DRAG_END; data: DragEndEvent }
     | { type: EGameEvent.DRAG_OVER; data: DragOverEvent }
-    | { type: EGameEvent.DROP; data: DropEvent };
+    | { type: EGameEvent.DROP; data: DropEvent }
+    | { type: EGameEvent.MoveCardToSlot; data: MoveCardEvent };
 
 // Типизированный EventEmitter
 export interface TypedEventEmitter {

@@ -1,29 +1,55 @@
 import type { Game } from "./Game";
 import type { EventEmitter } from "./lib/EventEmitter";
-import { EGameEvent, EGameAction } from "./lib/events";
+import { EGameEvent, type MoveCardEvent } from "./lib/events";
 import { observable, type IObservable } from "./lib/Observable";
 import { TempSlot } from "./objects/TempSlot";
 import { Column } from "./objects/Column";
-import type { IColumn, IResultSlot, ITempBucket, ITempSlot, IDeck, ICard } from "./interfaces";
+import type { IColumn, IResultSlot, ITempBucket, ITempSlot, IDeck, ICard, ISlot } from "./interfaces";
 import type { IDrawnCardsArea } from "./interfaces/IDrawnCardsArea";
 import { updateGameState } from "./react/hooks/useGameState";
 
 export class Controller {
     public clicks: IObservable<number> = observable(0);
     public selectedCard = observable<ICard | null>(null);
+    public selectedSlot = observable<ISlot | null>(null);
 
     constructor(
         private readonly eventEmitter: EventEmitter,
         private readonly game: Game,
     ) {
-        this.eventEmitter.on(EGameEvent.CARD_CLICK, this.clickCard);
-        this.eventEmitter.on(EGameEvent.CLICK_OUTSIDE, this.clickOutside);
-        this.eventEmitter.on(EGameEvent.COLUMN_CLICK, this.clickColumn);
-        this.eventEmitter.on(EGameEvent.RESULT_SLOT_CLICK, this.clickResultSlot);
-        this.eventEmitter.on(EGameEvent.TEMP_BUCKET_CLICK, this.clickTempBucket);
-        this.eventEmitter.on(EGameEvent.DECK_CLICK, this.clickDeck);
-        this.eventEmitter.on(EGameEvent.DRAG_END, this.dragEnd);
+        // this.eventEmitter.on(EGameEvent.CARD_CLICK, this.clickCard);
+        // this.eventEmitter.on(EGameEvent.CLICK_OUTSIDE, this.clickOutside);
+        // this.eventEmitter.on(EGameEvent.COLUMN_CLICK, this.clickColumn);
+        // this.eventEmitter.on(EGameEvent.RESULT_SLOT_CLICK, this.clickResultSlot);
+        // this.eventEmitter.on(EGameEvent.TEMP_BUCKET_CLICK, this.clickTempBucket);
+        // this.eventEmitter.on(EGameEvent.DECK_CLICK, this.clickDeck);
+        // this.eventEmitter.on(EGameEvent.DRAG_END, this.dragEnd);
+        // this.eventEmitter.on(EGameEvent.DROP, this.handleDrop);
+        // New Game Actions
+        this.eventEmitter.on(EGameEvent.MoveCardToSlot, this.moveCardToSlot);
+        this.eventEmitter.on(EGameEvent.SelectCard, this.selectCard);
     }
+
+    private selectCard = (data: { card: ICard, slot: ISlot }) => {
+        this.setSelectedCard(data.card, data.slot);
+    }
+
+    private moveCardToSlot = ({ card, target, source }: MoveCardEvent) => {
+        this.setSelectedCard(null);
+        if (!target.canAcceptCard(card)) return;
+        target.addCard(card);
+        source.removeCard(card);
+    }
+
+    public setSelectedCard = (card: ICard | null, slot?: ISlot) => {
+        if (card === this.selectedCard.get()) {
+            this.selectedCard.set(null);
+            this.selectedSlot.set(null);
+            return;
+        }
+        this.selectedCard.set(card);
+        this.selectedSlot.set(slot || null);
+    };
 
     private clickCard = (data: { card: ICard }) => {
         this.clicks.set((prev) => prev + 1);
@@ -46,10 +72,6 @@ export class Controller {
         this.clicks.set((prev) => prev + 1);
         this.selectedCard.set(null);
     }
-
-    public setSelectedCard = (card: ICard | null) => {
-        this.selectedCard.set(card);
-    };
 
     // Обработчики кликов по разным типам слотов
     private clickColumn = (data: { slot: IColumn }) => {
@@ -109,9 +131,36 @@ export class Controller {
         }
     }
 
-    private dragEnd = (data: { card: ICard }) => {
+    private dragEnd = (data: { card: ICard, sourceSlot?: any, targetSlot?: any }) => {
+        console.log('Controller[drag:end]', data);
+        
         // При завершении перетаскивания снимаем выделение с карты
         this.setSelectedCard(null);
+        
+        // Если перетаскивание было отменено (нет целевого слота), карта уже восстановлена в DragLayer
+        if (!data.targetSlot) {
+            console.log('Controller: Drag cancelled, card restored to original position');
+        }
+    }
+
+    private handleDrop = (data: { card: ICard, sourceSlot: any, targetSlot: any }) => {
+        console.log('Controller[drop]', data);
+        
+        // Пытаемся переместить карту в целевой слот
+        const success = this.moveCard(data.card, data.targetSlot);
+        
+        if (success) {
+            // Если перемещение успешно, снимаем выделение с карты
+            this.setSelectedCard(null);
+        } else {
+            // Если перемещение не удалось, уведомляем DragLayer о необходимости восстановить карту
+            console.log('Controller: Move failed, notifying DragLayer to restore card');
+            this.eventEmitter.emit(EGameEvent.DRAG_END, {
+                card: data.card,
+                sourceSlot: data.sourceSlot,
+                targetSlot: null
+            });
+        }
     }
 
     // Метод для возврата карты в колоду
@@ -128,7 +177,7 @@ export class Controller {
         let removed = false;
         if ('removeCard' in sourceSlot) {
             if (sourceSlot instanceof TempSlot) {
-                sourceSlot.removeCard();
+                sourceSlot.removeCard(card);
                 removed = true;
             } else {
                 removed = sourceSlot.removeCard(card) || false;
@@ -137,17 +186,8 @@ export class Controller {
         if (!removed) {
             return false;
         }
-
         // Добавляем карту в колоду
         deck.addCard(card);
-        
-        // Уведомляем об изменении состояния
-        this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
-            action: EGameAction.RETURN_TO_DECK,
-            card, 
-            sourceSlot, 
-            deck 
-        });
 
         // Проверяем состояние игры после возврата карты
         this.checkGameCompletion();
@@ -203,21 +243,11 @@ export class Controller {
         const rules = this.game.getRules();
         const sourceSlot = this.findCardSlot(card);
         
-        console.log('tryMoveCard:', {
-            card: card.getDisplayName(),
-            sourceSlot: sourceSlot ? 'found' : 'null',
-            targetSlot: 'target'
-        });
-        
         if (!sourceSlot) {
-            console.log('Source slot not found for card:', card.getDisplayName());
             return false;
         }
 
-        // Проверяем правила игры
-        const canMove = rules.canMoveCard(targetSlot, card);        
-        console.log('Can move:', canMove);
-        
+        const canMove = rules.canMoveCard(targetSlot, card);
         if (!canMove) {
             return false;
         }
@@ -240,7 +270,7 @@ export class Controller {
         let removed = false;
         if ('removeCard' in sourceSlot) {
             if (sourceSlot instanceof TempSlot) {
-                sourceSlot.removeCard();
+                sourceSlot.removeCard(card);
                 removed = true;
             } else {
                 removed = sourceSlot.removeCard(card) || false;
@@ -263,32 +293,18 @@ export class Controller {
             }
         }
 
-        // Добавляем карту в целевой слот
-        let added = false;
         if ('addCard' in targetSlot) {
             (targetSlot as any).addCard(card);
-            added = true;
         } else if ('addCardToSlot' in targetSlot) {
             const emptySlot = targetSlot.slots.find(slot => slot.isEmpty());
             if (emptySlot) {
                 (targetSlot as any).addCardToSlot(card, emptySlot);
-                added = true;
             } else {
                 return false;
             }
         } else {
             return false;
         }
-        
-        console.log('Card added to target:', added);
-
-        // Уведомляем об изменении состояния
-        this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
-            action: EGameAction.MOVE,
-            card, 
-            sourceSlot, 
-            targetSlot 
-        });
 
         // Проверяем состояние игры после хода
         this.checkGameCompletion();
@@ -340,14 +356,6 @@ export class Controller {
             }
         }
 
-        // Уведомляем об изменении состояния
-        this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
-            action: EGameAction.MOVE_STACK,
-            cards: removedStack, 
-            sourceSlot: sourceColumn, 
-            targetSlot 
-        });
-
         // Проверяем состояние игры после хода
         this.checkGameCompletion();
 
@@ -388,15 +396,6 @@ export class Controller {
             if (drawnCardsArea) {
                 drawnCardsArea.addCard(card);
             }
-            
-            // Уведомляем об изменении состояния
-            this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
-                action: EGameAction.DRAW_CARD, 
-                card, 
-                deck: deck as any,
-                drawnCardsArea
-            });
-
             // Проверяем состояние игры после вытягивания карты
             this.checkGameCompletion();
         }
@@ -445,14 +444,6 @@ export class Controller {
             deck.addCard(card);
             return false;
         }
-        
-        // Уведомляем об изменении состояния
-        this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
-            action: EGameAction.MOVE_FROM_DECK,
-            card, 
-            deck: deck as any, 
-            targetSlot 
-        });
 
         // Проверяем состояние игры после перемещения карты из колоды
         this.checkGameCompletion();
@@ -463,12 +454,6 @@ export class Controller {
     public shuffleDeck = (): void => {
         const deck = this.game.getDeck();
         deck.shuffle();
-        
-        // Уведомляем об изменении состояния
-        this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
-            action: EGameAction.SHUFFLE_DECK, 
-            deck 
-        });
     }
 
     public restartDeck = (): void => {
@@ -479,16 +464,8 @@ export class Controller {
         if (drawnCardsArea && !drawnCardsArea.isEmpty()) {
             // Возвращаем все вытянутые карты в колоду
             drawnCardsArea.returnAllCardsToDeck(deck);
-            
             // Перемешиваем колоду
             deck.shuffle();
-            
-            // Уведомляем об изменении состояния
-            this.eventEmitter.emit(EGameEvent.GAME_STATE_CHANGED, { 
-                action: EGameAction.SHUFFLE_DECK, 
-                deck,
-                drawnCardsArea
-            });
         }
     }
 

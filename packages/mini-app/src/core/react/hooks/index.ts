@@ -1,11 +1,9 @@
 // Основные хуки
 export { useController } from './useController';
-export { useControllerStates } from './useControllerStates';
 export { useEventEmitter } from './useEventEmitter';
 export { useObserve } from './useObserve';
 export { useColumn } from './useColumn';
 export { useColumnCards } from './useColumn';
-export { useResultCards } from './useResultCards';
 export { useTempBucket } from './useTempBucket';
 export { useDrawnCards, useDrawnCardsCards, useDeckCardCount } from './useDrawnCards';
 export { useGameState } from './useGameState';

@@ -6,6 +6,8 @@ import { VictoryScreen } from "./VictoryScreen";
 import { ClassicLayout } from "./Layouts/ClassicLayout";
 import { KlondikeLayout } from "./Layouts/KlondikeLayout";
 import { ESolitaireRules } from "../core/rules/GameRulesFactory";
+import { PixiContainer } from "./PixiGame/PixiContainer";
+import { useEventEmitter } from "@/core/react/hooks";
 
 interface GameCmpProps {
   game: Game;
@@ -16,6 +18,7 @@ interface GameCmpProps {
 export const GameCmp: React.FC<GameCmpProps> = ({ game, onNewGame, onBackToMenu }) => {
   const controller = useController();
   const { isWon } = useGameState();
+  const eventEmitter = useEventEmitter();
 
   const handleOutsideClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -79,24 +82,27 @@ export const GameCmp: React.FC<GameCmpProps> = ({ game, onNewGame, onBackToMenu 
   };
 
   return (
-    <div
-      className="flex flex-col p-10 gap-10"
-      onClick={handleOutsideClick}
-      onDragEnter={handleGameDragEnter}
-      onDragOver={handleGameDragOver}
-      onDragEnd={handleGameDragEnd}
-    >
-      <GameLayout game={game} />
-      <ClicksState />
-      
-      {/* Экран победы */}
-      {isWon && onNewGame && onBackToMenu && (
-        <VictoryScreen 
-          onNewGame={onNewGame}
-          onBackToMenu={onBackToMenu}
-        />
-      )}
-    </div>
+    <>
+      <PixiContainer game={game} controller={controller} eventEmitter={eventEmitter} />
+      <div
+        className="flex flex-col p-10 gap-10"
+        onClick={handleOutsideClick}
+        onDragEnter={handleGameDragEnter}
+        onDragOver={handleGameDragOver}
+        onDragEnd={handleGameDragEnd}
+      >
+        <GameLayout game={game} />
+        <ClicksState />
+        
+        {/* Экран победы */}
+        {isWon && onNewGame && onBackToMenu && (
+          <VictoryScreen 
+            onNewGame={onNewGame}
+            onBackToMenu={onBackToMenu}
+          />
+        )}
+      </div>
+    </>
   );
 };
 

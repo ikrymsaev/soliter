@@ -12,8 +12,17 @@ export interface IGameRules {
     readonly columnRules: ISlotRules<IColumn>;
     readonly resultSlotRules: ISlotRules<IResultSlot>;
     readonly tempBucketRules: ISlotRules<ITempBucket>;
+    readonly tempSlotRules: ISlotRules<ITempSlot>;
     readonly columnCount: number;
     readonly dealStrategy: IDealStrategy;
+
+    /**
+     * Проверяет доступна ли карта для взаимодействия.
+     */
+    canInteractWithCard(
+        card: ICard,
+        sourceSlot: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea
+    ): boolean;
 
     /**
      * Проверяет, может ли колонка принять карту
@@ -28,7 +37,7 @@ export interface IGameRules {
     /**
      * Проверяет, может ли временный слот принять карту
      */
-    canTempSlotAcceptCard(tempSlot: ITempBucket, card: ICard): boolean;
+    canTempSlotAcceptCard(tempSlot: ITempSlot): boolean;
     
     /**
      * Проверяет, можно ли переместить карту из одного слота в другой

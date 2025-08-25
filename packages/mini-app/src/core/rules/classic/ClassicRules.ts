@@ -1,6 +1,5 @@
 import type { IGameRules } from "../../interfaces/IGameRules";
 import type { ICard } from "../../interfaces/ICard";
-import { ECardType } from "../../interfaces/ICard";
 import { Column } from "../../objects/Column";
 import { TempBucket } from "../../objects/TempBucket";
 import { TempSlot } from "../../objects/TempSlot";
@@ -13,9 +12,11 @@ import { ClassicDealStrategy } from "./ClassicDealStrategy";
 import type { IColumn, IDeck, IResultBucket, IResultSlot, ITempBucket, ITempSlot } from "../../interfaces";
 import type { ISlotRules } from "../interfaces";
 import type { IDrawnCardsArea } from "../../interfaces/IDrawnCardsArea";
+import { TempSlotRules } from "./TempSlotRules";
 
 export class ClassicRules implements IGameRules {
     readonly columnRules: ISlotRules<IColumn>;
+    readonly tempSlotRules: ISlotRules<ITempSlot>;
     readonly resultSlotRules: ISlotRules<IResultSlot>;
     readonly tempBucketRules: ISlotRules<ITempBucket>;
     readonly columnCount: number = 8;
@@ -23,9 +24,23 @@ export class ClassicRules implements IGameRules {
 
     constructor() {
         this.columnRules = new ColumnRules();
+        this.tempSlotRules = new TempSlotRules();
         this.resultSlotRules = new ResultSlotRules();
         this.tempBucketRules = new TempBucketRules();
         this.dealStrategy = new ClassicDealStrategy();
+    }
+
+    canInteractWithCard(card: ICard, sourceSlot: IColumn | IResultSlot | ITempSlot | IDrawnCardsArea): boolean {
+        if (sourceSlot instanceof Column) {
+            return this.columnRules.canInteractWithCard(sourceSlot, card);
+        }
+        if (sourceSlot instanceof TempSlot) {
+            return this.tempSlotRules.canInteractWithCard(sourceSlot, card);
+        }
+        if (sourceSlot instanceof ResultSlot) {
+            return this.resultSlotRules.canInteractWithCard(sourceSlot, card);
+        }
+        return card.isVisible()
     }
     
     canColumnAcceptCard(column: IColumn, card: ICard): boolean {
@@ -36,8 +51,8 @@ export class ClassicRules implements IGameRules {
         return this.resultSlotRules.canAcceptCard(resultSlot, card);
     }
     
-    canTempSlotAcceptCard(tempSlot: ITempBucket): boolean {
-        return this.tempBucketRules.canAcceptCard(tempSlot);
+    canTempSlotAcceptCard(tempSlot: ITempSlot): boolean {
+        return this.tempSlotRules.canAcceptCard(tempSlot);
     }
     
     canMoveCard(
